@@ -1,0 +1,45 @@
+### 1. Kokoa 로그 분석
+POST http://localhost:8080/api/log-analysis?format=kokoa
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="kokoa.log"
+Content-Type: text/plain
+
+< ./kokoa.log
+--WebAppBoundary--
+
+> {%
+    client.global.set("kokoaJobId", response.body.jobId);
+    client.log("Created Kokoa Job ID: " + response.body.jobId);
+%}
+
+###
+
+### 2. Kokoa Job 상태 조회
+GET http://localhost:8080/api/log-analysis/jobs/{{kokoaJobId}}
+
+###
+
+### 3. Maver 로그 분석 (format=maver)
+POST http://localhost:8080/api/log-analysis?format=maver
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="maver.log"
+Content-Type: text/plain
+
+< ./maver.log
+--WebAppBoundary--
+
+> {%
+    client.global.set("maverJobId", response.body.jobId);
+    client.log("Created Maver Job ID: " + response.body.jobId);
+%}
+
+###
+
+### 4. Maver Job 상태 조회
+GET http://localhost:8080/api/log-analysis/jobs/{{maverJobId}}
+
+###
