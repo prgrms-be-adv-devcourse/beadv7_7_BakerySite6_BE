@@ -25,6 +25,7 @@ out/
 .env
 .env.*
 !.env.example
+application-local.yml
 
 ### Claude Code ###
 .claude/
