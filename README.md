@@ -1,7 +1,5 @@
 # OpenBake
 
-강의 레포 `DongwooSeo/lecture-examples` (`lectures/msa/step1`) 구조를 기준으로 함.
-
 ## 기술 스택
 
 - Java 21, Spring Boot 4.1.0
