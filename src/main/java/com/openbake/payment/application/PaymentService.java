@@ -23,16 +23,26 @@ public class PaymentService {
     private final OrderPaymentRepository orderPaymentRepository;
     private final WalletTransactionRepository walletTransactionRepository;
 
+    /**
+     * 주문 결제 — 주문 서비스가 같은 트랜잭션 안에서 직접 호출한다.
+     * 1. 회원 예치금 계좌에서 금액 차감 (잔액 부족 시 예외)
+     * 2. OrderPayment 생성 (상태: PAID)
+     * 3. 회원 원장에 -금액 기록 (돈 나감)
+     * 4. 플랫폼 원장에 +금액 기록 (돈 들어옴)
+     */
     @Transactional
     public void pay(Long orderId, Long memberId, BigDecimal amount) {
         DepositAccount memberAccount = getOrCreateMemberAccount(memberId);
         DepositAccount platformAccount = getPlatformAccount();
 
+        // 회원 예치금 차감 — 잔액 부족하면 IllegalStateException
         memberAccount.deduct(amount);
 
+        // 결제 기록 생성
         OrderPayment payment = OrderPayment.create(orderId, memberId, amount);
         orderPaymentRepository.save(payment);
 
+        // 회원 원장: -금액 (negate()로 부호 반전)
         walletTransactionRepository.save(WalletTransaction.create(
                 memberAccount,
                 TransactionType.PAYMENT,
@@ -42,29 +52,41 @@ public class PaymentService {
                 payment.getId()
         ));
 
+        // 플랫폼 원장: +금액
         walletTransactionRepository.save(WalletTransaction.create(
                 platformAccount,
                 TransactionType.PAYMENT,
                 amount,
                 null,
+                // 플랫폼 계좌는 거래 내역만 기록하는 게 목적이라 잔액 추적. 멤버 계좌처럼 잔액 부족 시 결제를 막는다는 개념이 아니기 때문.
                 ReferenceType.ORDER_PAYMENT,
                 payment.getId()
         ));
     }
 
+    /**
+     * 주문 환불 — pay()의 역방향. PAID 상태일 때만 가능.
+     * 1. OrderPayment 상태를 REFUNDED로 변경
+     * 2. 회원 예치금 계좌에 금액 복구
+     * 3. 회원 원장에 +금액 기록 (돈 돌아옴)
+     * 4. 플랫폼 원장에 -금액 기록 (돈 나감)
+     */
     @Transactional
     public void refund(Long orderId) {
         OrderPayment payment = orderPaymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 결제입니다."));
 
+        // PAID가 아니면 예외 발생
         payment.refund();
 
         DepositAccount memberAccount = depositAccountRepository.findByMemberId(payment.getMemberId())
                 .orElseThrow(() -> new IllegalStateException("예치금 계좌를 찾을 수 없습니다."));
         DepositAccount platformAccount = getPlatformAccount();
 
+        // 회원 예치금 복구
         memberAccount.refund(payment.getAmount());
 
+        // 회원 원장: +금액 (돈 돌아옴)
         walletTransactionRepository.save(WalletTransaction.create(
                 memberAccount,
                 TransactionType.REFUND,
@@ -74,24 +96,31 @@ public class PaymentService {
                 payment.getId()
         ));
 
+        // 플랫폼 원장: -금액 (돈 나감)
         walletTransactionRepository.save(WalletTransaction.create(
                 platformAccount,
                 TransactionType.REFUND,
                 payment.getAmount().negate(),
-                null,
+                null,  // 플랫폼은 잔액 추적 안 함
                 ReferenceType.ORDER_PAYMENT,
                 payment.getId()
         ));
     }
 
+    /**
+     * 구매 확정 — PAID → CONFIRMED. 정산 대상이 된다.
+     * 환불 불가 시점은 드롭 마감 기준이며, 주문 도메인에서 판단한다.
+     */
     @Transactional
     public void confirmPayment(Long orderId) {
         OrderPayment payment = orderPaymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 결제입니다."));
 
+        // PAID가 아니면 예외 발생
         payment.confirm();
     }
 
+    // 회원 계좌 조회. 없으면 새로 생성 (최초 결제 시 자동 생성)
     private DepositAccount getOrCreateMemberAccount(Long memberId) {
         return depositAccountRepository.findByMemberId(memberId)
                 .orElseGet(() -> depositAccountRepository.save(
@@ -99,6 +128,7 @@ public class PaymentService {
                 ));
     }
 
+    // 플랫폼 계좌 조회. 시스템에 1개만 존재하는 수익 집계용 가상 계좌
     private DepositAccount getPlatformAccount() {
         return depositAccountRepository.findAll().stream()
                 .filter(a -> a.getAccountType() == AccountType.PLATFORM)
