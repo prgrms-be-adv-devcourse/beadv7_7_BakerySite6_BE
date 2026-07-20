@@ -31,6 +31,9 @@ application-local.yml
 .claude/
 .claudeignore
 
+### Reference (로컬 전용) ###
+reference/
+
 ### OS ###
 .DS_Store
 Thumbs.db
