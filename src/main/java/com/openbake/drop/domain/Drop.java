@@ -5,8 +5,9 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+
 
 @Entity
 @Getter
@@ -33,7 +34,7 @@ public class Drop {
             joinColumns = @JoinColumn(name = "drop_id")
     )
     @Column(name = "available_date", nullable = false)
-    private List<LocalDate> pickUpAvailableDate = new ArrayList<>(); // 픽업 가능 날짜
+    private Set<LocalDate> pickUpAvailableDate = new HashSet<>(); // 픽업 가능 날짜
 
     @Column(nullable = false)
     private LocalDateTime dropStart; // 드롭 시작 시간
@@ -45,7 +46,7 @@ public class Drop {
     private Long sellerId; // 판매자 ID
 
     @Builder
-    public Drop(DropStatus dropStatus, DropProduct dropProduct, List<LocalDate> pickUpAvailableDates, int limitQuantity, LocalDateTime dropStart, LocalDateTime dropEnd, Long sellerId) {
+    public Drop(DropStatus dropStatus, DropProduct dropProduct, Set<LocalDate> pickUpAvailableDates, int limitQuantity, LocalDateTime dropStart, LocalDateTime dropEnd, Long sellerId) {
         validateDropPeriod(dropStart, dropEnd);
         validatePickUpDates(dropEnd, pickUpAvailableDates);
         if (limitQuantity <= 0) {
@@ -77,7 +78,7 @@ public class Drop {
         }
     }
 
-    private void validatePickUpDates(LocalDateTime dropEnd, List<LocalDate> pickUpAvailableDates) {
+    private void validatePickUpDates(LocalDateTime dropEnd, Set<LocalDate> pickUpAvailableDates) {
         if (pickUpAvailableDates == null || pickUpAvailableDates.isEmpty()) {
             throw new IllegalArgumentException("픽업 가능 날짜는 최소 하루 이상 필요합니다.");
         }
