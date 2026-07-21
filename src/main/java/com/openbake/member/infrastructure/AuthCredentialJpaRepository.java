@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface AuthCredentialJpaRepository extends JpaRepository<AuthCredential, Long> {
     Optional<AuthCredential> findByProviderAndProviderId(AuthProvider provider, String providerId);
     boolean existsByProviderAndProviderId(AuthProvider provider, String providerId);
+    boolean existsByProviderAndEmail(AuthProvider provider, String email);
 }
