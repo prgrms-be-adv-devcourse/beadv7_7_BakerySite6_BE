@@ -2,12 +2,14 @@ package com.openbake.member.presentation;
 
 import com.openbake.common.response.ApiResponse;
 import com.openbake.member.application.AuthService;
+import com.openbake.member.domain.AuthProvider;
+import com.openbake.member.presentation.dto.OAuthLoginRequest;
+import com.openbake.member.presentation.dto.OAuthLoginResponse;
 import com.openbake.member.presentation.dto.SignupRequest;
 import com.openbake.member.presentation.dto.SignupResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,5 +25,12 @@ public class AuthController {
     @PostMapping("/signup")
     public ApiResponse<SignupResponse> signup(@Valid @RequestBody SignupRequest request) {
         return ApiResponse.ok(authService.signup(request));
+    }
+
+    @PostMapping("/oauth/{provider}")
+    public ApiResponse<OAuthLoginResponse> loginWithOAuth(
+            @PathVariable String provider, @Valid @RequestBody OAuthLoginRequest request) {
+        AuthProvider authProvider = AuthProvider.valueOf(provider.toUpperCase());
+        return ApiResponse.ok(authService.loginOrSignupWithOAuth(authProvider, request));
     }
 }
