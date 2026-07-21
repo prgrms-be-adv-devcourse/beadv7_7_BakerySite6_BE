@@ -73,8 +73,13 @@ public class Drop {
         if (dropStart == null || dropEnd == null) {
             throw new IllegalArgumentException("시작 시간과 마감 시간은 필수입니다.");
         }
-        if (!dropStart.isBefore(dropEnd)) {
+        if (dropStart.isBefore(dropEnd) == false) {
             throw new IllegalArgumentException("시작 시간은 마감 시간보다 이전이어야 합니다.");
+        }
+
+        // 시작 시간은 최소한 현재보다 미래여야 함 (생성 시점 기준)
+        if (dropStart.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("드롭 시작 시간은 과거일 수 없습니다.");
         }
     }
 
