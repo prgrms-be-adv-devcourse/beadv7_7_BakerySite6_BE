@@ -6,7 +6,6 @@ import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -76,6 +75,8 @@ public class Drop {
         if (dropStart.isBefore(dropEnd) == false) {
             throw new IllegalArgumentException("시작 시간은 마감 시간보다 이전이어야 합니다.");
         }
+
+        // 시작 시간은 최소한 현재보다 미래여야 함 (생성 시점 기준)
         if (dropStart.isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("드롭 시작 시간은 과거일 수 없습니다.");
         }
