@@ -17,21 +17,19 @@ import java.util.Objects;
 @Transactional
 public class SettlementEventService {
 
-    /**
-     * 구매확정 이벤트 유형입니다.
-     */
     private static final String PURCHASE_CONFIRMED_EVENT =
             "PURCHASE_CONFIRMED";
 
     /**
-     * MVP에서 사용하는 기본 정산 수수료율입니다.
+     * MVP에서는 서비스 수수료율을 10%로 고정합니다.
      *
-     * 0.1000은 10%를 의미합니다.
+     * 추후 수수료 정책 테이블이 도입되면
+     * 판매자 또는 드롭별 수수료 정책을 조회하도록 변경합니다.
      */
     private static final BigDecimal DEFAULT_COMMISSION_RATE =
             new BigDecimal("0.1000");
 
-    private final SettlementInboxRepository settlementInboxRepository;
+    private final SettlementInboxEventRepository settlementInboxRepository;
     private final SettlementTargetRepository settlementTargetRepository;
 
     /**
@@ -43,11 +41,13 @@ public class SettlementEventService {
     public SettlementEventResult receive(
             ReceivePurchaseConfirmedCommand command
     ) {
-        Objects.requireNonNull(command, "command는 필수입니다.");
-        Objects.requireNonNull(command.eventId(), "eventId는 필수입니다.");
+        validateCommand(command);
 
         /*
-         * 같은 이벤트가 다시 전달된 경우입니다.
+         * 동일 이벤트가 이미 처리된 경우입니다.
+         *
+         * 주문 항목을 기준으로 기존 SettlementTarget을 찾아
+         * 중복 처리 결과를 반환합니다.
          */
         if (settlementInboxRepository.existsByEventId(command.eventId())) {
             Long existingTargetId = settlementTargetRepository
@@ -65,8 +65,10 @@ public class SettlementEventService {
         }
 
         /*
-         * eventId는 다르지만 동일한 주문 상품이 이미
-         * 정산 대상으로 등록된 경우입니다.
+         * eventId는 다르지만 같은 주문 항목인 경우입니다.
+         *
+         * 주문 서비스에서 새로운 eventId로 이벤트를 다시 만들어도
+         * 하나의 주문 항목은 한 번만 정산 대상이 되어야 합니다.
          */
         var existingTarget = settlementTargetRepository
                 .findByOrderIdAndOrderItemId(
@@ -85,30 +87,29 @@ public class SettlementEventService {
                     existingTarget.get().getId()
             );
         }
-
         /*
          * 새로운 정산 대상을 생성합니다.
          */
-        SettlementTarget settlementTarget =
-                SettlementTarget.create(
-                        command.orderId(),
-                        command.orderItemId(),
-                        command.sellerId(),
-                        command.productName(),
-                        command.quantity(),
-                        command.grossAmount(),
-                        DEFAULT_COMMISSION_RATE,
-                        command.confirmedAt()
-                );
+        SettlementTarget settlementTarget = SettlementTarget.create(
+                command.eventId(),
+                command.orderId(),
+                command.orderItemId(),
+                command.sellerId(),
+                command.dropId(),
+                command.productNameSnapshot(),
+                command.quantity(),
+                command.grossAmount(),
+                DEFAULT_COMMISSION_RATE,
+                command.purchaseConfirmedAt()
+        );
 
         SettlementTarget savedTarget =
                 settlementTargetRepository.save(settlementTarget);
 
         /*
-         * 정산 대상 저장이 성공한 이벤트를 Inbox에 기록합니다.
+         * SettlementTarget과 Inbox는 같은 트랜잭션 안에서 저장됩니다.
          *
-         * 이 작업들은 같은 트랜잭션에서 실행되므로 중간에 실패하면
-         * SettlementTarget과 Inbox 저장이 함께 롤백됩니다.
+         * 둘 중 하나라도 저장에 실패하면 전체 작업이 롤백됩니다.
          */
         settlementInboxRepository.save(
                 command.eventId(),
@@ -119,5 +120,18 @@ public class SettlementEventService {
                 command.eventId(),
                 savedTarget.getId()
         );
+    }
+
+    private void validateCommand(
+            ReceivePurchaseConfirmedCommand command
+    ) {
+        Objects.requireNonNull(command, "command는 필수입니다.");
+
+        if (command.eventId() == null
+                || command.eventId().isBlank()) {
+            throw new IllegalArgumentException(
+                    "eventId는 필수입니다."
+            );
+        }
     }
 }

@@ -10,47 +10,35 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-/**
- * 구매확정 이벤트 처리 서비스 단위 테스트입니다.
- *
- * 실제 데이터베이스를 사용하지 않고 Repository를 Mock으로 대체합니다.
- * 1. 처음 들어온 이벤트
- *    → SettlementTarget 저장
- *    → Inbox 저장
- *    → duplicate=false
- *
- * 2. 같은 eventId 재전송
- *    → SettlementTarget 저장 안 함
- *    → Inbox 저장 안 함
- *    → duplicate=true
- *
- * 3. eventId는 다르지만 같은 주문 상품
- *    → SettlementTarget 저장 안 함
- *    → 새 eventId는 Inbox 저장
- *    → duplicate=true
- */
 @ExtendWith(MockitoExtension.class)
 class SettlementEventServiceTest {
 
+    private static final String EVENT_ID =
+            "c41f55a8-9246-4bd6-bdf7-87b109fdb0c1";
+
+    private static final String DIFFERENT_EVENT_ID =
+            "9c42040a-6a87-42ef-b2d8-59d644d581f3";
+
+    private static final Long ORDER_ID = 1001L;
+    private static final Long ORDER_ITEM_ID = 2001L;
+    private static final Long SELLER_ID = 10L;
+    private static final Long DROP_ID = 3001L;
+
+    private static final OffsetDateTime PURCHASE_CONFIRMED_AT =
+            OffsetDateTime.parse("2026-07-21T10:00:00+09:00");
+
     @Mock
-    private SettlementInboxRepository settlementInboxRepository;
+    private SettlementInboxEventRepository settlementInboxRepository;
 
     @Mock
     private SettlementTargetRepository settlementTargetRepository;
@@ -67,43 +55,36 @@ class SettlementEventServiceTest {
 
     @Test
     @DisplayName("새 구매확정 이벤트를 받으면 정산 대상과 Inbox를 저장한다")
-    void receive_newEvent_createsSettlementTarget() {
+    void receiveNewPurchaseConfirmedEvent() {
         // given
-        UUID eventId = UUID.randomUUID();
+        ReceivePurchaseConfirmedCommand command = createCommand(EVENT_ID);
 
-        ReceivePurchaseConfirmedCommand command =
-                createCommand(
-                        eventId,
-                        1001L,
-                        2001L
-                );
-
-        when(settlementInboxRepository.existsByEventId(eventId))
+        when(settlementInboxRepository.existsByEventId(EVENT_ID))
                 .thenReturn(false);
 
         when(settlementTargetRepository.findByOrderIdAndOrderItemId(
-                command.orderId(),
-                command.orderItemId()
+                ORDER_ID,
+                ORDER_ITEM_ID
         )).thenReturn(Optional.empty());
 
-        SettlementTarget savedTarget = mock(SettlementTarget.class);
+        when(settlementTargetRepository.save(any(SettlementTarget.class)))
+                .thenAnswer(invocation -> {
+                    SettlementTarget target = invocation.getArgument(0);
 
-        when(savedTarget.getId()).thenReturn(1L);
+                    // JPA 저장 후 ID가 생성된 상황을 단위 테스트에서 흉내 냅니다.
+                    ReflectionTestUtils.setField(target, "id", 1L);
 
-        when(settlementTargetRepository.save(
-                any(SettlementTarget.class)
-        )).thenReturn(savedTarget);
+                    return target;
+                });
 
         // when
         SettlementEventResult result =
                 settlementEventService.receive(command);
 
         // then
-        assertAll(
-                () -> assertEquals(eventId, result.eventId()),
-                () -> assertEquals(1L, result.settlementTargetId()),
-                () -> assertFalse(result.duplicate())
-        );
+        assertThat(result.eventId()).isEqualTo(EVENT_ID);
+        assertThat(result.settlementTargetId()).isEqualTo(1L);
+        assertThat(result.duplicate()).isFalse();
 
         ArgumentCaptor<SettlementTarget> targetCaptor =
                 ArgumentCaptor.forClass(SettlementTarget.class);
@@ -111,74 +92,72 @@ class SettlementEventServiceTest {
         verify(settlementTargetRepository)
                 .save(targetCaptor.capture());
 
-        SettlementTarget createdTarget =
-                targetCaptor.getValue();
+        SettlementTarget savedTarget = targetCaptor.getValue();
 
-        assertAll(
-                () -> assertEquals(
-                        command.orderId(),
-                        createdTarget.getOrderId()
-                ),
-                () -> assertEquals(
-                        command.orderItemId(),
-                        createdTarget.getOrderItemId()
-                ),
-                () -> assertEquals(
-                        command.sellerId(),
-                        createdTarget.getSellerId()
-                ),
-                () -> assertEquals(
-                        command.productName(),
-                        createdTarget.getProductName()
-                ),
-                () -> assertEquals(
-                        command.quantity(),
-                        createdTarget.getQuantity()
-                ),
-                () -> assertEquals(
-                        command.grossAmount(),
-                        createdTarget.getGrossAmount()
-                ),
-                () -> assertEquals(
-                        new BigDecimal("0.1000"),
-                        createdTarget.getCommissionRate()
-                ),
-                () -> assertEquals(
-                        SettlementTargetStatus.PENDING,
-                        createdTarget.getStatus()
-                )
-        );
+        assertThat(savedTarget.getSourceEventId())
+                .isEqualTo(EVENT_ID);
+
+        assertThat(savedTarget.getOrderId())
+                .isEqualTo(ORDER_ID);
+
+        assertThat(savedTarget.getOrderItemId())
+                .isEqualTo(ORDER_ITEM_ID);
+
+        assertThat(savedTarget.getSellerId())
+                .isEqualTo(SELLER_ID);
+
+        assertThat(savedTarget.getDropId())
+                .isEqualTo(DROP_ID);
+
+        assertThat(savedTarget.getProductNameSnapshot())
+                .isEqualTo("제주 당근 케이크");
+
+        assertThat(savedTarget.getQuantity())
+                .isEqualTo(2);
+
+        assertThat(savedTarget.getGrossAmount())
+                .isEqualByComparingTo("30000.00");
+
+        assertThat(savedTarget.getCommissionRateSnapshot())
+                .isEqualByComparingTo("0.1000");
+
+        assertThat(savedTarget.getCommissionAmount())
+                .isEqualByComparingTo("3000.00");
+
+        assertThat(savedTarget.getNetAmount())
+                .isEqualByComparingTo("27000.00");
+
+        assertThat(savedTarget.getPurchaseConfirmedAt())
+                .isEqualTo(PURCHASE_CONFIRMED_AT);
+
+        assertThat(savedTarget.getSettlementId())
+                .isNull();
+
+        assertThat(savedTarget.getStatus())
+                .isEqualTo(SettlementTargetStatus.PENDING);
+
+        assertThat(savedTarget.getCreatedAt())
+                .isNotNull();
 
         verify(settlementInboxRepository).save(
-                eventId,
+                EVENT_ID,
                 "PURCHASE_CONFIRMED"
         );
     }
 
     @Test
-    @DisplayName("같은 eventId가 이미 처리됐다면 정산 대상을 새로 저장하지 않는다")
-    void receive_duplicatedEvent_doesNotCreateTarget() {
+    @DisplayName("동일 eventId가 다시 전달되면 정산 대상을 중복 생성하지 않는다")
+    void doNotCreateTargetWhenEventIdIsDuplicated() {
         // given
-        UUID eventId = UUID.randomUUID();
+        ReceivePurchaseConfirmedCommand command = createCommand(EVENT_ID);
+        SettlementTarget existingTarget = createExistingTarget(EVENT_ID, 1L);
 
-        ReceivePurchaseConfirmedCommand command =
-                createCommand(
-                        eventId,
-                        1001L,
-                        2001L
-                );
-
-        SettlementTarget existingTarget =
-                mock(SettlementTarget.class);
-
-        when(existingTarget.getId()).thenReturn(1L);
-
-        when(settlementInboxRepository.existsByEventId(eventId))
+        when(settlementInboxRepository.existsByEventId(EVENT_ID))
                 .thenReturn(true);
 
         when(settlementTargetRepository.findByOrderIdAndOrderItemId(
-                command.orderId(),
-                command.orderItemId()
+                ORDER_ID,
+                ORDER_ITEM_ID
         )).thenReturn(Optional.of(existingTarget));
 
         // when
@@ -186,43 +165,33 @@ class SettlementEventServiceTest {
                 settlementEventService.receive(command);
 
         // then
-        assertAll(
-                () -> assertEquals(eventId, result.eventId()),
-                () -> assertEquals(1L, result.settlementTargetId()),
-                () -> assertTrue(result.duplicate())
-        );
+        assertThat(result.eventId()).isEqualTo(EVENT_ID);
+        assertThat(result.settlementTargetId()).isEqualTo(1L);
+        assertThat(result.duplicate()).isTrue();
 
         verify(settlementTargetRepository, never())
                 .save(any(SettlementTarget.class));
 
         verify(settlementInboxRepository, never())
-                .save(any(UUID.class), anyString());
+                .save(anyString(), anyString());
     }
 
     @Test
-    @DisplayName("eventId는 다르지만 같은 주문 상품이 존재하면 Inbox만 저장한다")
-    void receive_sameOrderItem_savesOnlyInbox() {
+    @DisplayName("eventId가 달라도 동일 주문 항목이면 정산 대상을 중복 생성하지 않는다")
+    void doNotCreateTargetWhenOrderItemAlreadyExists() {
         // given
-        UUID eventId = UUID.randomUUID();
-
         ReceivePurchaseConfirmedCommand command =
-                createCommand(
-                        eventId,
-                        1001L,
-                        2001L
-                );
+                createCommand(DIFFERENT_EVENT_ID);
 
         SettlementTarget existingTarget =
-                mock(SettlementTarget.class);
+                createExistingTarget(EVENT_ID, 1L);
 
-        when(existingTarget.getId()).thenReturn(1L);
-
-        when(settlementInboxRepository.existsByEventId(eventId))
+        when(settlementInboxRepository.existsByEventId(DIFFERENT_EVENT_ID))
                 .thenReturn(false);
 
         when(settlementTargetRepository.findByOrderIdAndOrderItemId(
-                command.orderId(),
-                command.orderItemId()
+                ORDER_ID,
+                ORDER_ITEM_ID
         )).thenReturn(Optional.of(existingTarget));
 
         // when
@@ -230,40 +199,63 @@ class SettlementEventServiceTest {
                 settlementEventService.receive(command);
 
         // then
-        assertAll(
-                () -> assertEquals(eventId, result.eventId()),
-                () -> assertEquals(1L, result.settlementTargetId()),
-                () -> assertTrue(result.duplicate())
-        );
+        assertThat(result.eventId())
+                .isEqualTo(DIFFERENT_EVENT_ID);
+
+        assertThat(result.settlementTargetId())
+                .isEqualTo(1L);
+
+        assertThat(result.duplicate())
+                .isTrue();
 
         verify(settlementTargetRepository, never())
                 .save(any(SettlementTarget.class));
 
+        /*
+         * 새로운 eventId 자체는 정상적으로 소비한 것이므로
+         * Inbox에는 처리 이력을 남깁니다.
+         */
         verify(settlementInboxRepository).save(
-                eventId,
+                DIFFERENT_EVENT_ID,
                 "PURCHASE_CONFIRMED"
         );
     }
 
-    /**
-     * 테스트마다 반복되는 구매확정 Command를 생성합니다.
-     */
     private ReceivePurchaseConfirmedCommand createCommand(
-            UUID eventId,
-            Long orderId,
-            Long orderItemId
+            String eventId
     ) {
         return new ReceivePurchaseConfirmedCommand(
                 eventId,
-                orderId,
-                orderItemId,
-                10L,
+                ORDER_ID,
+                ORDER_ITEM_ID,
+                SELLER_ID,
+                DROP_ID,
                 "제주 당근 케이크",
                 2,
                 new BigDecimal("30000.00"),
-                OffsetDateTime.parse(
-                        "2026-07-21T10:00:00+09:00"
-                )
+                PURCHASE_CONFIRMED_AT
         );
+    }
+
+    private SettlementTarget createExistingTarget(
+            String eventId,
+            Long targetId
+    ) {
+        SettlementTarget target = SettlementTarget.create(
+                eventId,
+                ORDER_ID,
+                ORDER_ITEM_ID,
+                SELLER_ID,
+                DROP_ID,
+                "제주 당근 케이크",
+                2,
+                new BigDecimal("30000.00"),
+                new BigDecimal("0.1000"),
+                PURCHASE_CONFIRMED_AT
+        );
+
+        ReflectionTestUtils.setField(target, "id", targetId);
+
+        return target;
     }
 }

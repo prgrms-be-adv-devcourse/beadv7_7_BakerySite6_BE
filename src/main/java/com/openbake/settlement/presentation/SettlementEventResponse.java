@@ -2,13 +2,11 @@ package com.openbake.settlement.presentation;
 
 import com.openbake.settlement.application.SettlementEventResult;
 
-import java.util.UUID;
-
 /**
  * 구매확정 이벤트 처리 API의 응답 DTO입니다.
  */
 public record SettlementEventResponse(
-        UUID eventId,
+        String eventId,
         Long settlementTargetId,
         boolean duplicate
 ) {

@@ -1,29 +1,27 @@
 package com.openbake.settlement.infrastructure;
 
-import com.openbake.settlement.application.SettlementInboxRepository;
+import com.openbake.settlement.application.SettlementInboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-
-import java.util.UUID;
 
 /**
  * 정산 이벤트 Inbox 저장소의 JPA 구현체입니다.
  *
- * 애플리케이션 계층은 SettlementInboxRepository 인터페이스에만 의존하고,
+ * 애플리케이션 계층은 SettlementInboxEventRepository 인터페이스에만 의존하고,
  * 실제 PostgreSQL 저장은 이 어댑터가 담당합니다.
  */
 @Repository
 @RequiredArgsConstructor
-public class SettlementInboxRepositoryAdapter
-        implements SettlementInboxRepository {
+public class SettlementInboxEventRepositoryAdapter
+        implements SettlementInboxEventRepository {
 
-    private final SettlementInboxJpaRepository jpaRepository;
+    private final SettlementInboxEventJpaRepository jpaRepository;
 
     /**
      * 해당 이벤트가 이미 처리되었는지 확인합니다.
      */
     @Override
-    public boolean existsByEventId(UUID eventId) {
+    public boolean existsByEventId(String eventId) {
         return jpaRepository.existsByEventId(eventId);
     }
 
@@ -32,15 +30,12 @@ public class SettlementInboxRepositoryAdapter
      */
     @Override
     public void save(
-            UUID eventId,
+            String eventId,
             String eventType
     ) {
-        SettlementInboxEntity entity =
-                SettlementInboxEntity.create(
-                        eventId,
-                        eventType
-                );
+        SettlementInboxEventEntity inboxEvent =
+                SettlementInboxEventEntity.create(eventId, eventType);
 
-        jpaRepository.save(entity);
+        jpaRepository.save(inboxEvent);
     }
 }

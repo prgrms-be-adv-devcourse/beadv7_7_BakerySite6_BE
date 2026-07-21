@@ -2,7 +2,6 @@ package com.openbake.settlement.application;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 /**
  * 구매확정 이벤트를 정산 도메인에 전달하기 위한 커맨드입니다.
@@ -20,7 +19,7 @@ public record ReceivePurchaseConfirmedCommand(
          * 같은 이벤트가 여러 번 전달될 경우
          * 중복 처리를 방지하는 기준으로 사용합니다.
          */
-        UUID eventId,
+        String eventId,
 
         /**
          * 구매가 확정된 주문 ID입니다.
@@ -36,11 +35,11 @@ public record ReceivePurchaseConfirmedCommand(
          * 상품 판매자 ID입니다.
          */
         Long sellerId,
-
+        Long dropId,
         /**
          * 구매확정 당시의 상품명입니다.
          */
-        String productName,
+        String productNameSnapshot,
 
         /**
          * 구매 수량입니다.
@@ -51,10 +50,9 @@ public record ReceivePurchaseConfirmedCommand(
          * 수수료를 차감하기 전 주문 상품의 총 판매 금액입니다.
          */
         BigDecimal grossAmount,
-
         /**
          * 구매가 확정된 시각입니다.
          */
-        OffsetDateTime confirmedAt
+        OffsetDateTime purchaseConfirmedAt
 ) {
 }
