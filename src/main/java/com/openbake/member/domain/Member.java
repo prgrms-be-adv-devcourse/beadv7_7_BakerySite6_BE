@@ -18,7 +18,7 @@ public class Member {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "phone_number", nullable = false)
+    @Column(name = "phone_number")
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
@@ -38,6 +38,10 @@ public class Member {
 
     public static Member create(String name, String phoneNumber) {
         return new Member(name, phoneNumber);
+    }
+
+    public static Member createFromGoogle(String name) {
+        return new Member(name, null);
     }
 
     public void suspend() {
