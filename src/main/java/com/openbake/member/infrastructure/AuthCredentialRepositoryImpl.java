@@ -25,11 +25,6 @@ public class AuthCredentialRepositoryImpl implements AuthCredentialRepository {
     }
 
     @Override
-    public boolean existsByProviderAndProviderId(AuthProvider provider, String providerId) {
-        return authCredentialJpaRepository.existsByProviderAndProviderId(provider, providerId);
-    }
-
-    @Override
     public boolean existsByProviderAndEmail(AuthProvider provider, String email) {
         return authCredentialJpaRepository.existsByProviderAndEmail(provider, email);
     }
