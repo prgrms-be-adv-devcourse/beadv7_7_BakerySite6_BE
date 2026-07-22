@@ -5,6 +5,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "members")
 @Getter
@@ -29,6 +31,9 @@ public class Member {
     @Column(nullable = false)
     private MemberStatus status;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     public Member(String name, String phoneNumber) {
         this.name = name;
         this.phoneNumber = phoneNumber;
@@ -49,7 +54,19 @@ public class Member {
     }
 
     public void withdraw() {
+        this.name = "탈퇴한 회원";
+        this.phoneNumber = null;
         this.status = MemberStatus.WITHDRAWN;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void updateMember(String name, String phoneNumber) {
+        if (name != null) {
+            this.name = name;
+        }
+        if (phoneNumber != null) {
+            this.phoneNumber = phoneNumber;
+        }
     }
 
 }
