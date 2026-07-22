@@ -3,8 +3,6 @@ package com.openbake.member.presentation.dto.member;
 import com.openbake.member.domain.Member;
 import com.openbake.member.domain.MemberStatus;
 import com.openbake.member.domain.Role;
-import jakarta.persistence.Id;
-import jakarta.validation.constraints.NotBlank;
 
 public record MemberResponse (
     Long id,
