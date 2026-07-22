@@ -1,5 +1,7 @@
 package com.openbake.drop.domain;
 
+import com.openbake.common.exception.BusinessException;
+import com.openbake.common.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -50,10 +52,10 @@ public class Drop {
         validateDropPeriod(dropStart, dropEnd);
         validatePickUpDates(dropEnd, pickUpAvailableDates);
         if (limitQuantity <= 0) {
-            throw new IllegalArgumentException("1인당 제한 수량은 1개 이상이어야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "1인당 제한 수량은 1개 이상이어야 합니다.");
         }
         if (sellerId == null || dropProduct == null || dropStatus == null) {
-            throw new IllegalArgumentException("판매자 ID, 상품 정보, 드롭 상태는 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "판매자 ID, 상품 정보, 드롭 상태는 필수입니다.");
         }
 
 
@@ -71,21 +73,19 @@ public class Drop {
 
     private void validateDropPeriod(LocalDateTime dropStart, LocalDateTime dropEnd) {
         if (dropStart == null || dropEnd == null) {
-            throw new IllegalArgumentException("시작 시간과 마감 시간은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_DROP_TIME, "시작 시간과 마감 시간은 필수입니다.");
         }
-        if (dropStart.isBefore(dropEnd) == false) {
-            throw new IllegalArgumentException("시작 시간은 마감 시간보다 이전이어야 합니다.");
+        if (!dropStart.isBefore(dropEnd)) {
+            throw new BusinessException(ErrorCode.INVALID_DROP_TIME, "시작 시간은 마감 시간보다 이전이어야 합니다.");
         }
-
-        // 시작 시간은 최소한 현재보다 미래여야 함 (생성 시점 기준)
         if (dropStart.isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("드롭 시작 시간은 과거일 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_DROP_TIME, "드롭 시작 시간은 과거일 수 없습니다.");
         }
     }
 
     private void validatePickUpDates(LocalDateTime dropEnd, Set<LocalDate> pickUpAvailableDates) {
         if (pickUpAvailableDates == null || pickUpAvailableDates.isEmpty()) {
-            throw new IllegalArgumentException("픽업 가능 날짜는 최소 하루 이상 필요합니다.");
+            throw new BusinessException(ErrorCode.INVALID_PICKUP_DATE, "픽업 가능 날짜는 최소 하루 이상 필요합니다.");
         }
 
         LocalDate dropEndDate = dropEnd.toLocalDate();
@@ -93,7 +93,7 @@ public class Drop {
                 .anyMatch(date -> !date.isAfter(dropEndDate));
 
         if (hasInvalidDate) {
-            throw new IllegalArgumentException("모든 픽업 가능 날짜는 드롭 마감일 이후여야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_PICKUP_DATE); // 기본 메세지 사용
         }
     }
 

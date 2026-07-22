@@ -1,6 +1,8 @@
 package com.openbake.drop.domain;
 
 
+import com.openbake.common.exception.BusinessException;
+import com.openbake.common.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -29,13 +31,13 @@ public class DropInventory {
     @Builder
     public DropInventory(int totalQuantity, int remainQuantity, Long dropId) {
         if (dropId == null) {
-            throw new IllegalArgumentException("Drop ID는 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "Drop ID는 필수입니다.");
         }
         if (totalQuantity <= 0) {
-            throw new IllegalArgumentException("총 수량은 0보다 커야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "총 수량은 0보다 커야 합니다.");
         }
         if (remainQuantity < 0 || remainQuantity > totalQuantity) {
-            throw new IllegalArgumentException("잔여 수량은 0 이상, 총 수량 이하이어야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "잔여 수량은 0 이상, 총 수량 이하이어야 합니다.");
         }
 
         this.totalQuantity = totalQuantity;
@@ -44,13 +46,13 @@ public class DropInventory {
     }
 
     public void decreaseQuantity(int quantity) {
-        if(quantity <= 0){
-            throw new IllegalArgumentException("수량은 1개 이상 선택해주세요.");
+        if (quantity <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "수량은 1개 이상 선택해주세요.");
         }
         if (this.remainQuantity < quantity) {
-            throw new IllegalArgumentException("재고가 부족합니다.");
+            // 도메인 전용 에러코드 사용 (E002: 준비된 재고가 모두 소진되었습니다.)
+            throw new BusinessException(ErrorCode.DROP_OUT_OF_STOCK);
         }
         this.remainQuantity -= quantity;
     }
-
 }
