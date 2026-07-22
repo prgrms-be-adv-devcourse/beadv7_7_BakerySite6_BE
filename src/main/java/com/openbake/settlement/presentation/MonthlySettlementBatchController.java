@@ -1,6 +1,7 @@
 package com.openbake.settlement.presentation;
 
 import com.openbake.settlement.application.MonthlySettlementBatchLauncher;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.job.JobExecution;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ public class MonthlySettlementBatchController {
     @PostMapping("/monthly")
     public ResponseEntity<MonthlySettlementBatchResponse>
     runMonthlySettlement(
+            @Valid
             @RequestBody MonthlySettlementBatchRequest request
     ) {
         JobExecution jobExecution =
