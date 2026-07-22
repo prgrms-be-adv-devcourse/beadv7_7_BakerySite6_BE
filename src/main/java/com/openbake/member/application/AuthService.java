@@ -14,7 +14,7 @@ import com.openbake.member.infrastructure.MemberRepositoryImpl;
 import com.openbake.member.infrastructure.jwt.JwtTokenProvider;
 import com.openbake.member.infrastructure.oauth.OidcIdTokenVerifier;
 import com.openbake.member.infrastructure.oauth.OidcIdentity;
-import com.openbake.member.presentation.dto.*;
+import com.openbake.member.presentation.dto.auth.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

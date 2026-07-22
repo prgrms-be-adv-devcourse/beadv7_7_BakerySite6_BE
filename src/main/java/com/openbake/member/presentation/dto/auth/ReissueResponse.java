@@ -1,4 +1,4 @@
-package com.openbake.member.presentation.dto;
+package com.openbake.member.presentation.dto.auth;
 
 public record ReissueResponse(
         String accessToken,
