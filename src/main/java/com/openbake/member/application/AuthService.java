@@ -4,6 +4,7 @@ import com.openbake.common.exception.AuthenticationFailedException;
 import com.openbake.common.exception.DuplicateMemberException;
 import com.openbake.common.exception.EntityNotFoundException;
 import com.openbake.common.exception.InvalidRefreshTokenException;
+import com.openbake.member.domain.AccessTokenRepository;
 import com.openbake.member.domain.AuthCredential;
 import com.openbake.member.domain.AuthProvider;
 import com.openbake.member.domain.Member;
@@ -32,6 +33,7 @@ public class AuthService {
     private final OidcIdTokenVerifier oidcIdTokenVerifier;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AccessTokenRepository accessTokenRepository;
 
     @Transactional
     public SignupResponse signup(SignupRequest request) {
@@ -133,6 +135,7 @@ public class AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(memberId, role);
         String refreshToken = jwtTokenProvider.createRefreshToken(memberId);
 
+        accessTokenRepository.save(memberId, accessToken);
         refreshTokenRepository.save(memberId, refreshToken);
 
         return new TokenPair(accessToken, refreshToken);
