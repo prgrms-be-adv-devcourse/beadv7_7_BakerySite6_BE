@@ -34,4 +34,9 @@ public class AuthCredentialRepositoryImpl implements AuthCredentialRepository {
         return authCredentialJpaRepository.existsByProviderAndEmail(provider, email);
     }
 
+    @Override
+    public Optional<AuthCredential> findByProviderAndEmail(AuthProvider provider, String email) {
+        return authCredentialJpaRepository.findByProviderAndEmail(provider, email);
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.openbake.member.application;
 
+import com.openbake.common.exception.AuthenticationFailedException;
 import com.openbake.common.exception.DuplicateMemberException;
 import com.openbake.common.exception.EntityNotFoundException;
 import com.openbake.member.domain.AuthCredential;
@@ -9,11 +10,9 @@ import com.openbake.member.infrastructure.AuthCredentialRepositoryImpl;
 import com.openbake.member.infrastructure.MemberRepositoryImpl;
 import com.openbake.member.infrastructure.oauth.OidcIdTokenVerifier;
 import com.openbake.member.infrastructure.oauth.OidcIdentity;
-import com.openbake.member.presentation.dto.OAuthLoginRequest;
-import com.openbake.member.presentation.dto.OAuthLoginResponse;
-import com.openbake.member.presentation.dto.SignupRequest;
-import com.openbake.member.presentation.dto.SignupResponse;
+import com.openbake.member.presentation.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,6 +67,22 @@ public class AuthService {
                 savedMember.getId(), provider, identity.providerId(), identity.email()));
 
         return new OAuthLoginResponse(savedMember.getId(), identity.email(), savedMember.getName(), true);
+    }
+
+    @Transactional
+    public LocalLoginResponse localLogin(LocalLoginRequest request) {
+
+        AuthCredential auth = authCredentialRepository.findByProviderAndEmail(AuthProvider.LOCAL, request.email())
+                .orElseThrow(() -> new AuthenticationFailedException("이메일 또는 비밀번호가 올바르지 않습니다."));
+
+        if (!passwordEncoder.matches(request.password(), auth.getPasswordHash())) {
+            throw new AuthenticationFailedException("이메일 또는 비밀번호가 올바르지 않습니다.");
+        }
+
+        Member member = memberRepository.findById(auth.getMemberId())
+                .orElseThrow(() -> new EntityNotFoundException("연동된 회원 정보를 찾을 수 없습니다."));
+
+        return new LocalLoginResponse(member.getId(), member.getRole());
     }
 
 }

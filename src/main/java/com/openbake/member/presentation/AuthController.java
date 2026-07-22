@@ -3,10 +3,7 @@ package com.openbake.member.presentation;
 import com.openbake.common.response.ApiResponse;
 import com.openbake.member.application.AuthService;
 import com.openbake.member.domain.AuthProvider;
-import com.openbake.member.presentation.dto.OAuthLoginRequest;
-import com.openbake.member.presentation.dto.OAuthLoginResponse;
-import com.openbake.member.presentation.dto.SignupRequest;
-import com.openbake.member.presentation.dto.SignupResponse;
+import com.openbake.member.presentation.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,5 +29,10 @@ public class AuthController {
             @PathVariable String provider, @Valid @RequestBody OAuthLoginRequest request) {
         AuthProvider authProvider = AuthProvider.valueOf(provider.toUpperCase());
         return ApiResponse.ok(authService.loginOrSignupWithOAuth(authProvider, request));
+    }
+
+    @PostMapping("/login")
+    public ApiResponse<LocalLoginResponse> login(@Valid @RequestBody LocalLoginRequest request) {
+        return ApiResponse.ok(authService.localLogin(request));
     }
 }
