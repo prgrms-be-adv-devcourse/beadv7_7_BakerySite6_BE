@@ -1,6 +1,5 @@
 package com.openbake.cart.presentation;
 
-import com.openbake.cart.domain.Cart;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
