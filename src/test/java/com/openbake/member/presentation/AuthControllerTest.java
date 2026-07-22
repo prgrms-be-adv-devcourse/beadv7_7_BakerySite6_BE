@@ -5,6 +5,7 @@ import com.openbake.common.exception.DuplicateMemberException;
 import com.openbake.common.exception.InvalidIdTokenException;
 import com.openbake.common.exception.InvalidRefreshTokenException;
 import com.openbake.member.application.AuthService;
+import com.openbake.member.domain.AccessTokenRepository;
 import com.openbake.member.domain.AuthProvider;
 import com.openbake.member.domain.Role;
 import com.openbake.member.infrastructure.jwt.JwtTokenProvider;
@@ -50,6 +51,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private AccessTokenRepository accessTokenRepository;
 
     @Test
     @DisplayName("회원가입 성공 시 200과 회원 정보를 반환한다")
