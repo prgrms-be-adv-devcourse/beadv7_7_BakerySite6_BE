@@ -35,4 +35,9 @@ public class AuthController {
     public ApiResponse<LocalLoginResponse> login(@Valid @RequestBody LocalLoginRequest request) {
         return ApiResponse.ok(authService.localLogin(request));
     }
+
+    @PostMapping("/reissue")
+    public ApiResponse<ReissueResponse> reissue(@Valid @RequestBody ReissueRequest request) {
+        return ApiResponse.ok(authService.reissue(request));
+    }
 }
