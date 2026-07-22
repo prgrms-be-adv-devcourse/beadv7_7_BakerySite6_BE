@@ -46,3 +46,6 @@ docs/
 ### OS ###
 .DS_Store
 Thumbs.db
+
+### local ###
+run-local.sh

@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.Objects;
 
 /**
- * 구매 확정된 주문 항목의 정산 대상입니다.
+ * 구매 확정된 주문 항목의 정산 대상입니다.(정산 후보 원장)
  *
  * 주문 상품 하나당 하나의 SettlementTarget이 생성되며,
  * 이후 월별 정산 작업에서 특정 Settlement에 배정됩니다.
@@ -323,7 +323,11 @@ public class SettlementTarget {
             BigDecimal commissionRateSnapshot,
             OffsetDateTime purchaseConfirmedAt
     ) {
-        Objects.requireNonNull(sourceEventId, "sourceEventId는 필수입니다.");
+        if (sourceEventId == null || sourceEventId.isBlank()) {
+            throw new IllegalArgumentException(
+                    "sourceEventId는 필수입니다."
+            );
+        }
         Objects.requireNonNull(purchaseConfirmedAt, "purchaseConfirmedAt은 필수입니다.");
 
         validatePositiveId(orderId, "orderId");

@@ -15,14 +15,14 @@ import org.springframework.stereotype.Repository;
 public class SettlementInboxEventRepositoryAdapter
         implements SettlementInboxEventRepository {
 
-    private final SettlementInboxEventJpaRepository jpaRepository;
+    private final SettlementInboxEventJpaRepository settlementInboxEventJpaRepository;
 
     /**
      * 해당 이벤트가 이미 처리되었는지 확인합니다.
      */
     @Override
     public boolean existsByEventId(String eventId) {
-        return jpaRepository.existsByEventId(eventId);
+        return settlementInboxEventJpaRepository.existsByEventId(eventId);
     }
 
     /**
@@ -36,6 +36,6 @@ public class SettlementInboxEventRepositoryAdapter
         SettlementInboxEventEntity inboxEvent =
                 SettlementInboxEventEntity.create(eventId, eventType);
 
-        jpaRepository.save(inboxEvent);
+        settlementInboxEventJpaRepository.save(inboxEvent);
     }
 }

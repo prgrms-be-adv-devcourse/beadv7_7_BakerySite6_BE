@@ -1,10 +1,13 @@
 package com.openbake.settlement.infrastructure;
 
 import com.openbake.settlement.domain.SettlementTarget;
+import com.openbake.settlement.domain.SettlementTargetStatus;
 import com.openbake.settlement.domain.SettlementTargetRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -19,14 +22,14 @@ import java.util.Optional;
 public class SettlementTargetRepositoryAdapter
         implements SettlementTargetRepository {
 
-    private final SettlementTargetJpaRepository jpaRepository;
+    private final SettlementTargetJpaRepository settlementTargetJpaRepository;
 
     /**
      * 정산 대상을 PostgreSQL에 저장합니다.
      */
     @Override
     public SettlementTarget save(SettlementTarget target) {
-        return jpaRepository.save(target);
+        return settlementTargetJpaRepository.save(target);
     }
 
     /**
@@ -37,7 +40,7 @@ public class SettlementTargetRepositoryAdapter
             Long orderId,
             Long orderItemId
     ) {
-        return jpaRepository.findByOrderIdAndOrderItemId(
+        return settlementTargetJpaRepository.findByOrderIdAndOrderItemId(
                 orderId,
                 orderItemId
         );
@@ -51,9 +54,29 @@ public class SettlementTargetRepositoryAdapter
             Long orderId,
             Long orderItemId
     ) {
-        return jpaRepository.existsByOrderIdAndOrderItemId(
+        return settlementTargetJpaRepository.existsByOrderIdAndOrderItemId(
                 orderId,
                 orderItemId
         );
+    }
+
+    @Override
+    public List<SettlementTarget> saveAll(
+            List<SettlementTarget> targets
+    ) {
+        return settlementTargetJpaRepository.saveAll(targets);
+    }
+
+    @Override
+    public List<SettlementTarget> findAllPendingTargets(
+            OffsetDateTime periodStart,
+            OffsetDateTime periodEnd
+    ) {
+        return settlementTargetJpaRepository
+                .findAllByStatusAndPurchaseConfirmedAtGreaterThanEqualAndPurchaseConfirmedAtLessThanOrderBySellerIdAscPurchaseConfirmedAtAscIdAsc(
+                        SettlementTargetStatus.PENDING,
+                        periodStart,
+                        periodEnd
+                );
     }
 }

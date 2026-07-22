@@ -1,8 +1,11 @@
 package com.openbake.settlement.infrastructure;
 
 import com.openbake.settlement.domain.SettlementTarget;
+import com.openbake.settlement.domain.SettlementTargetStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -30,5 +33,20 @@ public interface SettlementTargetJpaRepository
     boolean existsByOrderIdAndOrderItemId(
             Long orderId,
             Long orderItemId
+    );
+
+    /**
+     * status = PENDING
+     * purchaseConfirmedAt >= 시작 시각
+     * purchaseConfirmedAt < 종료 시각
+     * sellerId 오름차순
+     * 구매확정 시각 오름차순
+     * id 오름차순
+     */
+    List<SettlementTarget>
+    findAllByStatusAndPurchaseConfirmedAtGreaterThanEqualAndPurchaseConfirmedAtLessThanOrderBySellerIdAscPurchaseConfirmedAtAscIdAsc(
+            SettlementTargetStatus status,
+            OffsetDateTime periodStart,
+            OffsetDateTime periodEnd
     );
 }

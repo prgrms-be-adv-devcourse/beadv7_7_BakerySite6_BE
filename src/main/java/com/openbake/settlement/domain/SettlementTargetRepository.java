@@ -1,5 +1,7 @@
 package com.openbake.settlement.domain;
 
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -16,6 +18,10 @@ public interface SettlementTargetRepository {
      * @return 저장된 정산 대상
      */
     SettlementTarget save(SettlementTarget target);
+
+    List<SettlementTarget> saveAll(
+            List<SettlementTarget> targets
+    );
 
     /**
      * 주문 ID와 주문 상품 ID로 정산 대상을 조회합니다.
@@ -34,5 +40,10 @@ public interface SettlementTargetRepository {
     boolean existsByOrderIdAndOrderItemId(
             Long orderId,
             Long orderItemId
+    );
+    /** 월 정산 배치에서는 특정 기간의 PENDING 대상을 판매자별로 조회 */
+    List<SettlementTarget> findAllPendingTargets(
+            OffsetDateTime periodStart,
+            OffsetDateTime periodEnd
     );
 }
