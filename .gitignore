@@ -40,6 +40,9 @@ plan/
 ### ARD (로컬 전용) ###
 ard/
 
+### Docs (로컬 전용) ###
+docs/
+
 ### OS ###
 .DS_Store
 Thumbs.db
