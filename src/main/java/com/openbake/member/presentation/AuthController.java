@@ -40,4 +40,10 @@ public class AuthController {
     public ApiResponse<ReissueResponse> reissue(@Valid @RequestBody ReissueRequest request) {
         return ApiResponse.ok(authService.reissue(request));
     }
+
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(@Valid @RequestBody LogoutRequest request) {
+        authService.logout(request);
+        return ApiResponse.ok();
+    }
 }

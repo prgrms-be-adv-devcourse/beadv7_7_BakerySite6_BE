@@ -81,7 +81,6 @@ public class AuthService {
 
     @Transactional
     public LocalLoginResponse localLogin(LocalLoginRequest request) {
-
         AuthCredential authCredential = authCredentialRepository.findByProviderAndEmail(AuthProvider.LOCAL, request.email())
                 .orElseThrow(() -> new AuthenticationFailedException("이메일 또는 비밀번호가 올바르지 않습니다."));
 
@@ -118,6 +117,16 @@ public class AuthService {
         TokenPair tokens = issueTokens(member.getId(), member.getRole());
 
         return new ReissueResponse(tokens.accessToken(), tokens.refreshToken());
+    }
+
+    public void logout(LogoutRequest request) {
+        if (!jwtTokenProvider.isValid(request.refreshToken())) {
+            throw new InvalidRefreshTokenException("유효하지 않은 리프레시 토큰입니다.");
+        }
+
+        Long memberId = jwtTokenProvider.getMemberId(request.refreshToken());
+
+        refreshTokenRepository.deleteByMemberId(memberId);
     }
 
     private TokenPair issueTokens(Long memberId, Role role) {
