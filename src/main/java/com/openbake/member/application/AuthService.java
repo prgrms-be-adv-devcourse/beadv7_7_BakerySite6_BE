@@ -108,7 +108,8 @@ public class AuthService {
                 .orElseThrow(() -> new InvalidRefreshTokenException("유효하지 않은 리프레시 토큰입니다."));
 
         if (!storedRefreshToken.equals(request.refreshToken())) {
-            throw new InvalidRefreshTokenException("유효하지 않은 리프레시 토큰입니다.");
+            refreshTokenRepository.deleteByMemberId(memberId);
+            throw new InvalidRefreshTokenException("이미 사용된 리프레시 토큰입니다. 다시 로그인해주세요.");
         }
 
         Member member = memberRepository.findById(memberId)
