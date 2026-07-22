@@ -59,4 +59,17 @@ public class TossPaymentsClient implements PgClient {
             throw new PgApproveException("PG_ERROR", e.getMessage());
         }
     }
+
+    /**
+     * 토스페이먼츠 결제 조회 API 호출.
+     * GET /v1/payments/{paymentKey}
+     * 미결 충전 확인 배치에서 IN_PROGRESS 건의 실제 상태를 확인할 때 사용.
+     */
+    @Override
+    public PgPaymentStatus getPaymentStatus(String pgPaymentKey) {
+        return restClient.get()
+                .uri("/{paymentKey}", pgPaymentKey)
+                .retrieve()
+                .body(PgPaymentStatus.class);
+    }
 }

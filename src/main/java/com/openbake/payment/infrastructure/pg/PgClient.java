@@ -15,4 +15,11 @@ public interface PgClient {
      * 승인이 실패하면 PgApproveException을 던진다.
      */
     PgApproveResponse approve(String pgPaymentKey, String pgOrderId, BigDecimal amount);
+
+    /**
+     * PG 결제 조회.
+     * paymentKey로 토스페이먼츠에 결제 상태를 조회한다.
+     * 미결 충전 확인 배치에서 IN_PROGRESS 상태의 실제 결과를 확인할 때 사용.
+     */
+    PgPaymentStatus getPaymentStatus(String pgPaymentKey);
 }

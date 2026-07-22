@@ -46,9 +46,16 @@ public class ChargeFacade {
             PgApproveResponse pgResponse = pgClient.approve(pgPaymentKey, pgOrderId, amount);
 
             // [트랜잭션 2] 성공 — 예치금 증가 + 원장 기록 + DONE
-            BigDecimal balanceAfter = chargeService.completeCharge(request, pgResponse.method());
+            ChargeService.ChargeCompleteResult result = chargeService.completeCharge(request, pgResponse.method());
 
-            return new ChargeApproveResponse(request.getId(), amount, balanceAfter);
+            return new ChargeApproveResponse(
+                    request.getId(),
+                    result.chargeRequest().getStatus().name(),
+                    amount,
+                    result.balanceAfter(),
+                    result.chargeRequest().getPgMethod(),
+                    result.chargeRequest().getApprovedAt()
+            );
 
         } catch (PgApproveException e) {
             // [트랜잭션 2] 실패 — FAILED 기록

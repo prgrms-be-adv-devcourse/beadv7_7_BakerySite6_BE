@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>충전 테스트</title>
+    <script src="https://js.tosspayments.com/v2/standard"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 5px; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .step { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { border-color: #4caf50; background: #f0fff0; }
+        .error { border-color: #f44336; background: #fff0f0; }
+        h3 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <h1>충전 테스트 페이지</h1>
+    <p>서버가 <code>localhost:8080</code>에서 실행 중이어야 합니다.</p>
+
+    <div class="step">
+        <h3>Step 1. 충전 금액 입력</h3>
+        <label>memberId: <input type="number" id="memberId" value="1"></label><br><br>
+        <label>금액(원): <input type="number" id="amount" value="10000" step="1000"></label><br><br>
+        <button onclick="createCharge()">충전 요청 생성</button>
+        <pre id="step1Result">아직 실행 안 함</pre>
+    </div>
+
+    <div class="step">
+        <h3>Step 2. 결제수단 선택 및 결제</h3>
+        <p>Step 1 완료 후 아래에 결제 위젯이 나타납니다.</p>
+        <!-- 결제 UI -->
+        <div id="payment-method"></div>
+        <!-- 이용약관 UI -->
+        <div id="agreement"></div>
+        <br>
+        <button id="payment-button" disabled>결제하기</button>
+        <pre id="step2Result">대기 중</pre>
+    </div>
+
+    <div class="step">
+        <h3>Step 3. 승인 결과</h3>
+        <pre id="step3Result">대기 중</pre>
+    </div>
+
+    <div class="step">
+        <h3>Step 4. 잔액 확인</h3>
+        <button onclick="checkBalance()">잔액 조회</button>
+        <pre id="step4Result">아직 실행 안 함</pre>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        // 결제위젯 문서용 테스트 키
+        const CLIENT_KEY = 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm';
+
+        let savedMemberId = null;
+        let savedOrderId = null;
+        let savedOrderName = null;
+        let widgets = null;
+
+        // Step 1: 충전 요청 생성
+        async function createCharge() {
+            const memberId = document.getElementById('memberId').value;
+            const amount = document.getElementById('amount').value;
+            savedMemberId = memberId;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/deposit/charges`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ memberId: Number(memberId), amount: Number(amount) })
+                });
+                const data = await res.json();
+                document.getElementById('step1Result').textContent = JSON.stringify(data, null, 2);
+
+                if (data.success) {
+                    savedOrderId = data.data.pgOrderId;
+                    savedOrderName = data.data.orderName;
+                    await renderWidget(data.data.amount);
+                }
+            } catch (e) {
+                document.getElementById('step1Result').textContent = '에러: ' + e.message;
+            }
+        }
+
+        // Step 2: 결제위젯 렌더링
+        async function renderWidget(amount) {
+            document.getElementById('step2Result').textContent = '위젯 로딩 중...';
+
+            const customerKey = 'test-customer-' + savedMemberId;
+            const tossPayments = TossPayments(CLIENT_KEY);
+            widgets = tossPayments.widgets({ customerKey: customerKey });
+
+            // 결제 금액 설정
+            await widgets.setAmount({ currency: 'KRW', value: amount });
+
+            // 결제 UI 렌더링
+            await widgets.renderPaymentMethods({
+                selector: '#payment-method',
+                variantKey: 'DEFAULT'
+            });
+
+            // 이용약관 UI 렌더링
+            await widgets.renderAgreement({
+                selector: '#agreement',
+                variantKey: 'AGREEMENT'
+            });
+
+            document.getElementById('payment-button').disabled = false;
+            document.getElementById('step2Result').textContent = '결제수단을 선택하고 [결제하기] 버튼을 누르세요.';
+
+            // 결제하기 버튼 클릭
+            document.getElementById('payment-button').addEventListener('click', async function () {
+                try {
+                    await widgets.requestPayment({
+                        orderId: savedOrderId,
+                        orderName: savedOrderName || '예치금 충전',
+                        successUrl: window.location.origin + '/charge-test.html?success=true&memberId=' + savedMemberId,
+                        failUrl: window.location.origin + '/charge-test.html?success=false',
+                    });
+                } catch (e) {
+                    document.getElementById('step2Result').textContent = '결제 에러: ' + e.message;
+                }
+            });
+        }
+
+        // Step 3: 페이지 로드 시 URL 파라미터 확인 (토스 리다이렉트 후)
+        window.onload = async function() {
+            const params = new URLSearchParams(window.location.search);
+
+            if (params.get('success') === 'true') {
+                const paymentKey = params.get('paymentKey');
+                const orderId = params.get('orderId');
+                const amount = params.get('amount');
+                const memberId = params.get('memberId') || 1;
+
+                document.getElementById('step1Result').textContent = '이전 단계에서 완료됨';
+                document.getElementById('step2Result').textContent =
+                    '결제 완료!\npaymentKey: ' + paymentKey +
+                    '\norderId: ' + orderId +
+                    '\namount: ' + amount;
+
+                // 우리 서버에 승인 요청
+                try {
+                    const res = await fetch(`${API_BASE}/api/v1/deposit/charges/confirm`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            memberId: Number(memberId),
+                            paymentKey: paymentKey,
+                            orderId: orderId,
+                            amount: Number(amount)
+                        })
+                    });
+                    const data = await res.json();
+                    document.getElementById('step3Result').textContent = JSON.stringify(data, null, 2);
+
+                    if (data.success) {
+                        document.getElementById('step3Result').parentElement.classList.add('success');
+                        savedMemberId = memberId;
+                    } else {
+                        document.getElementById('step3Result').parentElement.classList.add('error');
+                    }
+                } catch (e) {
+                    document.getElementById('step3Result').textContent = '승인 에러: ' + e.message;
+                }
+            } else if (params.get('success') === 'false') {
+                document.getElementById('step2Result').textContent =
+                    '결제 실패 또는 취소\n' + params.get('message');
+                document.getElementById('step2Result').parentElement.classList.add('error');
+            }
+        };
+
+        // Step 4: 잔액 확인
+        async function checkBalance() {
+            const memberId = savedMemberId || document.getElementById('memberId').value;
+            try {
+                const res = await fetch(`${API_BASE}/api/v1/deposit/account/${memberId}`);
+                const data = await res.json();
+                document.getElementById('step4Result').textContent = JSON.stringify(data, null, 2);
+
+                if (data.success) {
+                    document.getElementById('step4Result').parentElement.classList.add('success');
+                }
+            } catch (e) {
+                document.getElementById('step4Result').textContent = '에러: ' + e.message;
+            }
+        }
+    </script>
+</body>
+</html>

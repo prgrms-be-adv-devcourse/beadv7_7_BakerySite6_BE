@@ -12,6 +12,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import com.openbake.common.exception.BusinessException;
+import com.openbake.common.exception.ErrorCode;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -84,7 +87,8 @@ public class OrderPayment {
     // 현재 상태가 expected가 아니면 예외
     private void validateStatus(PaymentStatus expected) {
         if (this.status != expected) {
-            throw new IllegalStateException("처리할 수 없는 결제 상태입니다: " + this.status);
+            throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS,
+                    "처리할 수 없는 결제 상태입니다: " + this.status);
         }
     }
 }

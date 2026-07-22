@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/payments/webhook")
+@RequestMapping("/api/v1/webhooks/pg")
 @RequiredArgsConstructor
 public class WebhookController {
 
@@ -35,20 +35,23 @@ public class WebhookController {
     @PostMapping("/toss")
     public ResponseEntity<Void> handleTossWebhook(@RequestBody TossWebhookRequest request) {
         log.info("[웹훅 수신] eventType={}, paymentKey={}, orderId={}, status={}",
-                request.eventType(), request.paymentKey(), request.orderId(), request.status());
+                request.eventType(),
+                request.data() != null ? request.data().paymentKey() : null,
+                request.data() != null ? request.data().orderId() : null,
+                request.data() != null ? request.data().status() : null);
 
-        // DONE 상태 웹훅만 처리 (취소 등은 현재 미지원)
-        if (!"DONE".equals(request.status())) {
+        // data가 없거나 DONE 상태가 아니면 무시
+        if (request.data() == null || !"DONE".equals(request.data().status())) {
             return ResponseEntity.ok().build();
         }
 
         // pgPaymentKey로 충전 요청 조회
         ChargeRequest chargeRequest = chargeRequestRepository
-                .findByPgPaymentKey(request.paymentKey())
+                .findByPgPaymentKey(request.data().paymentKey())
                 .orElse(null);
 
         if (chargeRequest == null) {
-            log.warn("[웹훅] 매칭되는 충전 요청 없음: paymentKey={}", request.paymentKey());
+            log.warn("[웹훅] 매칭되는 충전 요청 없음: paymentKey={}", request.data().paymentKey());
             return ResponseEntity.ok().build();
         }
 

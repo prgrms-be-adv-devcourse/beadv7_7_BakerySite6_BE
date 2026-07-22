@@ -1,5 +1,7 @@
 package com.openbake.payment.application;
 
+import com.openbake.common.exception.BusinessException;
+import com.openbake.common.exception.ErrorCode;
 import com.openbake.payment.domain.ChargeRequest;
 import com.openbake.payment.domain.ChargeStatus;
 import com.openbake.payment.domain.DepositAccount;
@@ -57,14 +59,45 @@ class ChargeServiceTest {
         }
 
         @Test
+        @DisplayName("최소 금액 미만이면 예외가 발생한다")
+        void failsWhenAmountBelowMinimum() {
+            assertThatThrownBy(() ->
+                    chargeService.createChargeRequest(1L, new BigDecimal("500"))
+            ).isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.INVALID_CHARGE_AMOUNT);
+        }
+
+        @Test
+        @DisplayName("최대 금액 초과면 예외가 발생한다")
+        void failsWhenAmountAboveMaximum() {
+            assertThatThrownBy(() ->
+                    chargeService.createChargeRequest(1L, new BigDecimal("600000"))
+            ).isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.INVALID_CHARGE_AMOUNT);
+        }
+
+        @Test
+        @DisplayName("1,000원 단위가 아니면 예외가 발생한다")
+        void failsWhenAmountNotInUnit() {
+            assertThatThrownBy(() ->
+                    chargeService.createChargeRequest(1L, new BigDecimal("1500"))
+            ).isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.INVALID_CHARGE_AMOUNT);
+        }
+
+        @Test
         @DisplayName("이미 진행 중인 충전 요청이 있으면 예외가 발생한다")
         void failsWhenActiveRequestExists() {
             chargeService.createChargeRequest(1L, new BigDecimal("10000"));
 
             assertThatThrownBy(() ->
                     chargeService.createChargeRequest(1L, new BigDecimal("20000"))
-            ).isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("이미 진행 중인 충전 요청");
+            ).isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.CHARGE_ALREADY_IN_PROGRESS);
         }
     }
 
@@ -92,8 +125,9 @@ class ChargeServiceTest {
             assertThatThrownBy(() ->
                     chargeService.markInProgress(
                             created.pgOrderId(), "payment_key_123", 999L, new BigDecimal("10000"))
-            ).isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("본인의 충전 요청이 아닙니다");
+            ).isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.CHARGE_OWNER_MISMATCH);
         }
 
         @Test
@@ -104,8 +138,9 @@ class ChargeServiceTest {
             assertThatThrownBy(() ->
                     chargeService.markInProgress(
                             created.pgOrderId(), "payment_key_123", 1L, new BigDecimal("99999"))
-            ).isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("충전 금액이 일치하지 않습니다");
+            ).isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.CHARGE_AMOUNT_MISMATCH);
         }
     }
 
@@ -127,11 +162,11 @@ class ChargeServiceTest {
             depositAccountRepository.save(account);
 
             // when
-            BigDecimal balanceAfter = chargeService.completeCharge(request, "카드");
+            ChargeService.ChargeCompleteResult result = chargeService.completeCharge(request, "카드");
 
             // then — 잔액: 5000 + 10000 = 15000
-            assertThat(balanceAfter).isEqualByComparingTo("15000");
-            assertThat(request.getStatus()).isEqualTo(ChargeStatus.DONE);
+            assertThat(result.balanceAfter()).isEqualByComparingTo("15000");
+            assertThat(result.chargeRequest().getStatus()).isEqualTo(ChargeStatus.DONE);
 
             // 원장 기록 확인
             assertThat(walletTransactionRepository.findAll()).hasSize(1);
@@ -144,10 +179,10 @@ class ChargeServiceTest {
             ChargeRequest request = chargeService.markInProgress(
                     created.pgOrderId(), "payment_key_456", 2L, new BigDecimal("10000"));
 
-            BigDecimal balanceAfter = chargeService.completeCharge(request, "카드");
+            ChargeService.ChargeCompleteResult result = chargeService.completeCharge(request, "카드");
 
             // 계좌 자동 생성 + 0 + 10000 = 10000
-            assertThat(balanceAfter).isEqualByComparingTo("10000");
+            assertThat(result.balanceAfter()).isEqualByComparingTo("10000");
             assertThat(depositAccountRepository.findByMemberId(2L)).isPresent();
         }
     }

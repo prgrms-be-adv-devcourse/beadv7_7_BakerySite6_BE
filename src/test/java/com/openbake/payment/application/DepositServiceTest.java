@@ -39,6 +39,7 @@ class DepositServiceTest {
         // then
         assertThat(response.memberId()).isEqualTo(1L);
         assertThat(response.balance()).isEqualByComparingTo("30000");
+        assertThat(response.hasChargeInProgress()).isFalse();
     }
 
     @Test
@@ -50,6 +51,7 @@ class DepositServiceTest {
         // then
         assertThat(response.memberId()).isEqualTo(999L);
         assertThat(response.balance()).isEqualByComparingTo("0");
+        assertThat(response.hasChargeInProgress()).isFalse();
 
         // DB에도 계좌가 생겼는지 확인
         assertThat(depositAccountRepository.findByMemberId(999L)).isPresent();
