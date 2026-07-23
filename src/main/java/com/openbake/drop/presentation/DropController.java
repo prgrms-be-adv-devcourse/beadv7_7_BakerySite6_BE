@@ -17,7 +17,7 @@ public class DropController {
     private final DropService dropService;
 
     @PostMapping("/register") // 등록은 seller 만 되므로 이걸 호출한 사람이 seller인지 확인 필요 -> SpringSecurity @Authentication을 통해 현재 유저의 ID를 받고 그 ID가 seller에 존재하면 접근 허용
-    public ApiResponse<?> registerDropProduct(@Valid @RequestBody DropProductInfoRequest dropProductInfoRequest
+    public ApiResponse<DropProductInfoResponse> registerDropProduct(@Valid @RequestBody DropProductInfoRequest dropProductInfoRequest
 //                                              ,@AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
 //        Long sellerId = customUserDetails.getSellerId();
