@@ -13,7 +13,6 @@ public enum ErrorCode {
 
     // 결제 — 충전
     INVALID_CHARGE_AMOUNT(HttpStatus.BAD_REQUEST, "P000", "충전 금액이 올바르지 않습니다."),
-    CHARGE_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "P001", "진행 중인 충전 요청이 있습니다."),
     CHARGE_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "P002", "존재하지 않는 충전 요청입니다."),
     CHARGE_OWNER_MISMATCH(HttpStatus.FORBIDDEN, "P003", "본인의 충전 요청이 아닙니다."),
     CHARGE_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "P004", "충전 금액이 일치하지 않습니다."),

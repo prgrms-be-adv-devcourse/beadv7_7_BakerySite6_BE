@@ -89,15 +89,35 @@ class ChargeServiceTest {
         }
 
         @Test
-        @DisplayName("이미 진행 중인 충전 요청이 있으면 예외가 발생한다")
-        void failsWhenActiveRequestExists() {
-            chargeService.createChargeRequest(1L, new BigDecimal("10000"));
+        @DisplayName("기존 READY가 있으면 만료시키고 새 요청을 생성한다")
+        void expiresExistingReadyAndCreatesNew() {
+            ChargeCreateResponse first = chargeService.createChargeRequest(1L, new BigDecimal("10000"));
+            ChargeCreateResponse second = chargeService.createChargeRequest(1L, new BigDecimal("20000"));
 
-            assertThatThrownBy(() ->
-                    chargeService.createChargeRequest(1L, new BigDecimal("20000"))
-            ).isInstanceOf(BusinessException.class)
-                    .extracting(e -> ((BusinessException) e).getErrorCode())
-                    .isEqualTo(ErrorCode.CHARGE_ALREADY_IN_PROGRESS);
+            // 기존 건은 EXPIRED
+            ChargeRequest firstRequest = chargeRequestRepository.findById(first.chargeRequestId()).get();
+            assertThat(firstRequest.getStatus()).isEqualTo(ChargeStatus.EXPIRED);
+
+            // 새 건은 READY, pgOrderId가 다름
+            ChargeRequest secondRequest = chargeRequestRepository.findById(second.chargeRequestId()).get();
+            assertThat(secondRequest.getStatus()).isEqualTo(ChargeStatus.READY);
+            assertThat(secondRequest.getPgOrderId()).isNotEqualTo(firstRequest.getPgOrderId());
+        }
+
+        @Test
+        @DisplayName("IN_PROGRESS 건이 있어도 새 충전 요청이 생성된다")
+        void allowsNewRequestWhenInProgressExists() {
+            // given — 기존 요청을 IN_PROGRESS로 만듦
+            ChargeCreateResponse existing = chargeService.createChargeRequest(1L, new BigDecimal("10000"));
+            ChargeRequest existingRequest = chargeRequestRepository.findById(existing.chargeRequestId()).get();
+            existingRequest.markInProgress("pk_existing");
+
+            // when — 새 충전 요청 생성
+            ChargeCreateResponse newRequest = chargeService.createChargeRequest(1L, new BigDecimal("20000"));
+
+            // then — 정상 생성됨
+            assertThat(newRequest.chargeRequestId()).isNotEqualTo(existing.chargeRequestId());
+            assertThat(newRequest.pgOrderId()).isNotEqualTo(existing.pgOrderId());
         }
     }
 

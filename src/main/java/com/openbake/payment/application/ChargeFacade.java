@@ -4,8 +4,10 @@ import com.openbake.payment.domain.ChargeRequest;
 import com.openbake.payment.infrastructure.pg.PgApproveException;
 import com.openbake.payment.infrastructure.pg.PgApproveResponse;
 import com.openbake.payment.infrastructure.pg.PgClient;
+import com.openbake.payment.infrastructure.pg.PgUnknownResultException;
 import com.openbake.payment.presentation.dto.ChargeApproveResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -25,6 +27,7 @@ import java.math.BigDecimal;
  *
  * 이 클래스 자체에는 @Transactional이 없다. 각 단계의 트랜잭션은 ChargeService가 관리한다.
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ChargeFacade {
@@ -58,8 +61,14 @@ public class ChargeFacade {
             );
 
         } catch (PgApproveException e) {
-            // [트랜잭션 2] 실패 — FAILED 기록
+            // [트랜잭션 2] 확정 실패 — FAILED 기록
             chargeService.failCharge(request, e.getFailureCode(), e.getFailureReason());
+            throw e;
+        } catch (PgUnknownResultException e) {
+            // 결과 모름 — IN_PROGRESS 유지. failCharge() 호출 안 함.
+            // 배치(ChargeReconcileScheduler)가 다음 주기에 PG 조회해서 실제 결과를 반영한다.
+            log.warn("[충전] PG 결과 모름 — chargeRequestId={}, reason={}",
+                    request.getId(), e.getReason());
             throw e;
         }
     }

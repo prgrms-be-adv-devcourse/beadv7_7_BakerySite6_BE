@@ -4,6 +4,9 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+    hikari:
+      # H2는 SET SESSION lock_timeout 문법을 모르므로 비활성화
+      connection-init-sql:
 
   jpa:
     hibernate:
@@ -13,3 +16,5 @@ spring:
 payment:
   toss:
     secret-key: test_sk_dummy_for_testing
+    connect-timeout: 3000
+    read-timeout: 15000

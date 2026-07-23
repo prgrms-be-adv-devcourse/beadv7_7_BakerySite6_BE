@@ -3,8 +3,6 @@ package com.openbake.payment.application;
 import com.openbake.payment.domain.ChargeRequest;
 import com.openbake.payment.domain.ChargeStatus;
 import com.openbake.payment.infrastructure.ChargeRequestRepository;
-import com.openbake.payment.infrastructure.pg.PgClient;
-import com.openbake.payment.infrastructure.pg.PgPaymentStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -29,8 +27,7 @@ import java.util.List;
 public class ChargeReconcileScheduler {
 
     private final ChargeRequestRepository chargeRequestRepository;
-    private final ChargeService chargeService;
-    private final PgClient pgClient;
+    private final ChargeReconcileService chargeReconcileService;
 
     @Scheduled(fixedRate = 5 * 60 * 1000)  // 5분마다
     public void reconcileInProgressCharges() {
@@ -43,33 +40,15 @@ public class ChargeReconcileScheduler {
         log.info("[배치] 미결 충전 확인 시작 — {}건", inProgressRequests.size());
 
         for (ChargeRequest request : inProgressRequests) {
-            reconcileSingle(request);
+            try {
+                chargeReconcileService.reconcile(request);
+            } catch (Exception e) {
+                // PG 조회 실패 시 해당 건만 스킵하고 다음 건 처리 계속
+                log.warn("[배치] reconcile 실패 — chargeRequestId={}, error={}",
+                        request.getId(), e.getMessage());
+            }
         }
 
         log.info("[배치] 미결 충전 확인 완료");
-    }
-
-    private void reconcileSingle(ChargeRequest request) {
-        try {
-            PgPaymentStatus status = pgClient.getPaymentStatus(request.getPgPaymentKey());
-
-            if (status.isDone()) {
-                chargeService.completeCharge(request, status.method());
-                log.info("[배치] 충전 완료 처리 — chargeRequestId={}, paymentKey={}",
-                        request.getId(), request.getPgPaymentKey());
-            } else if (status.isFailed()) {
-                chargeService.failCharge(request, status.status(), "PG 조회 결과: " + status.status());
-                log.info("[배치] 충전 실패 처리 — chargeRequestId={}, status={}",
-                        request.getId(), status.status());
-            } else {
-                // WAITING_FOR_DEPOSIT 등 아직 미확정 상태 — 다음 배치에서 재확인
-                log.debug("[배치] 미확정 상태 유지 — chargeRequestId={}, status={}",
-                        request.getId(), status.status());
-            }
-        } catch (Exception e) {
-            // PG 조회 실패 시 해당 건만 스킵하고 다음 건 처리 계속
-            log.warn("[배치] PG 조회 실패 — chargeRequestId={}, error={}",
-                    request.getId(), e.getMessage());
-        }
     }
 }

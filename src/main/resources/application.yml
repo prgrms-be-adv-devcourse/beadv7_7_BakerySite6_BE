@@ -6,6 +6,8 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    hikari:
+      connection-init-sql: SET SESSION lock_timeout = '10s'
 
   jpa:
     hibernate:
@@ -36,6 +38,8 @@ spring:
 payment:
   toss:
     secret-key: ${TOSS_SECRET_KEY:test_sk_xxxxxxxxxxxxxxx}
+    connect-timeout: 3000
+    read-timeout: 15000
 
 logging:
   level:

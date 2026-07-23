@@ -81,7 +81,7 @@ public class PaymentService {
         // PAID가 아니면 예외 발생
         payment.refund();
 
-        DepositAccount memberAccount = depositAccountRepository.findByMemberId(payment.getMemberId())
+        DepositAccount memberAccount = depositAccountRepository.findByMemberIdForUpdate(payment.getMemberId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.DEPOSIT_ACCOUNT_NOT_FOUND));
         DepositAccount platformAccount = getPlatformAccount();
 
@@ -122,9 +122,9 @@ public class PaymentService {
         payment.confirm();
     }
 
-    // 회원 계좌 조회. 없으면 새로 생성 (최초 결제 시 자동 생성)
+    // 회원 계좌 조회 (비관적 락) — 잔액 변경 시 Lost Update 방지
     private DepositAccount getOrCreateMemberAccount(Long memberId) {
-        return depositAccountRepository.findByMemberId(memberId)
+        return depositAccountRepository.findByMemberIdForUpdate(memberId)
                 .orElseGet(() -> depositAccountRepository.save(
                         DepositAccount.createMemberAccount(memberId)
                 ));

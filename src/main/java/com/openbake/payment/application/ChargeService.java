@@ -47,13 +47,15 @@ public class ChargeService {
         // 금액 검증: 최소 1,000원, 최대 500,000원, 1,000원 단위
         validateChargeAmount(amount);
 
-        // 이미 진행 중인 충전 요청이 있으면 중복 방지
-        boolean hasActiveRequest = chargeRequestRepository.existsByMemberIdAndStatusIn(
-                memberId, List.of(ChargeStatus.READY, ChargeStatus.IN_PROGRESS)
-        );
-        if (hasActiveRequest) {
-            throw new BusinessException(ErrorCode.CHARGE_ALREADY_IN_PROGRESS);
-        }
+        // 기존 READY 건이 있으면 만료 처리 (결제창 안 끝낸 상태 — 돈 안 나감)
+        // List로 받는 이유: 기존 existsBy 검사가 확인-후-저장이라 레이스가 있었고,
+        // READY가 2건 이상 존재할 수 있음. Optional이면 IncorrectResultSizeDataAccessException.
+        chargeRequestRepository.findByMemberIdAndStatus(memberId, ChargeStatus.READY)
+                .forEach(ChargeRequest::markExpired);
+
+        // IN_PROGRESS는 차단하지 않음.
+        // 이중 적립 방어는 락 + isDone() 가드 + 원장 유니크가 담당하므로 이 검사와 무관.
+        // IN_PROGRESS를 차단하면 배치가 못 푸는 건이 생겼을 때 회원이 영구히 충전 불가.
 
         // PG에 보낼 주문번호 생성 (UUID)
         String pgOrderId = UUID.randomUUID().toString();
@@ -76,7 +78,12 @@ public class ChargeService {
      */
     @Transactional
     public ChargeRequest markInProgress(String pgOrderId, String pgPaymentKey, Long memberId, BigDecimal amount) {
-        ChargeRequest request = chargeRequestRepository.findByPgOrderId(pgOrderId)
+        // 비관적 락으로 조회 — 더블클릭/네트워크 재시도로 같은 pgOrderId 요청이
+        // 동시에 올 때, 두 번째 스레드는 첫 번째가 커밋할 때까지 대기한다.
+        // 첫 번째가 IN_PROGRESS로 바꾸고 커밋하면, 두 번째는 READY가 아닌 걸 보고 예외.
+        // → PG 승인 요청이 한 번만 나간다.
+        // 락 순서: charge_requests → deposit_accounts. completeCharge()도 같은 순서. 뒤집으면 데드락.
+        ChargeRequest request = chargeRequestRepository.findByPgOrderIdForUpdate(pgOrderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHARGE_REQUEST_NOT_FOUND));
 
         // 본인 요청인지, 금액이 일치하는지 검증 (위변조 방지)
@@ -99,14 +106,22 @@ public class ChargeService {
 
     @Transactional
     public ChargeCompleteResult completeCharge(ChargeRequest request, String pgMethod) {
-        // markInProgress()가 다른 트랜잭션이라 request가 분리(detached) 상태.
-        // 현재 트랜잭션에서 다시 로드해야 JPA가 변경을 감지한다.
-        ChargeRequest managed = chargeRequestRepository.findById(request.getId())
+        // 비관적 락으로 조회 — 웹훅/배치 동시 호출 시 한 쪽이 대기
+        ChargeRequest managed = chargeRequestRepository.findByIdForUpdate(request.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHARGE_REQUEST_NOT_FOUND));
+
+        // 이미 처리된 건이면 스킵 (멱등성 — 락 획득 후 재확인)
+        if (managed.isDone()) {
+            BigDecimal balance = depositAccountRepository.findByMemberId(managed.getMemberId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.DEPOSIT_ACCOUNT_NOT_FOUND))
+                    .getBalance();
+            return new ChargeCompleteResult(balance, managed);
+        }
+
         managed.markDone(pgMethod);
 
-        // 회원 예치금 계좌에 금액 추가
-        DepositAccount account = depositAccountRepository.findByMemberId(managed.getMemberId())
+        // 회원 예치금 계좌에 금액 추가 — 비관적 락으로 Lost Update 방지
+        DepositAccount account = depositAccountRepository.findByMemberIdForUpdate(managed.getMemberId())
                 .orElseGet(() -> depositAccountRepository.save(
                         DepositAccount.createMemberAccount(managed.getMemberId())
                 ));
@@ -131,10 +146,15 @@ public class ChargeService {
      */
     @Transactional
     public void failCharge(ChargeRequest request, String failureCode, String failureReason) {
-        // markInProgress()가 다른 트랜잭션이라 request가 분리(detached) 상태.
-        // 현재 트랜잭션에서 다시 로드해야 JPA가 변경을 감지한다.
-        ChargeRequest managed = chargeRequestRepository.findById(request.getId())
+        // 비관적 락으로 조회 — completeCharge와 동시 실행 방지
+        ChargeRequest managed = chargeRequestRepository.findByIdForUpdate(request.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHARGE_REQUEST_NOT_FOUND));
+
+        // 이미 DONE이면 스킵 (배치/웹훅이 먼저 성공 처리한 경우)
+        if (managed.isDone()) {
+            return;
+        }
+
         managed.markFailed(failureCode, failureReason);
     }
 

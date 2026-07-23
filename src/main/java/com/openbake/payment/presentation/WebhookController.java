@@ -1,6 +1,6 @@
 package com.openbake.payment.presentation;
 
-import com.openbake.payment.application.ChargeService;
+import com.openbake.payment.application.ChargeReconcileService;
 import com.openbake.payment.domain.ChargeRequest;
 import com.openbake.payment.infrastructure.ChargeRequestRepository;
 import com.openbake.payment.presentation.dto.TossWebhookRequest;
@@ -15,13 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 토스페이먼츠 웹훅 수신 컨트롤러.
  *
- * 웹훅은 "보험"이다:
- * - 정상 흐름에서는 프론트 → 서버 → PG 승인으로 처리가 완료된다.
- * - 하지만 서버가 PG 응답을 받기 전에 죽거나, 네트워크 문제로 응답을 놓치면
- *   토스가 웹훅으로 "결제 완료됐어" 알려준다.
- * - 이미 처리된 건이면 무시한다 (멱등성: ChargeRequest.markDone이 이미 DONE이면 무시).
+ * 웹훅 바디의 status를 신뢰하지 않는다.
+ * 토스 결제 웹훅(PAYMENT_STATUS_CHANGED)에는 HMAC 서명도 secret도 없으므로,
+ * paymentKey만 꺼내서 PG 조회 API로 실제 상태를 확인한다.
  *
- * ARD-005: 웹훅은 동기 처리 우선. 성능 이슈 나면 @Async 전환.
+ * 에러 응답 시 토스가 재시도를 반복하므로, 모든 예외를 잡아 200을 반환한다.
  */
 @Slf4j
 @RestController
@@ -30,43 +28,45 @@ import org.springframework.web.bind.annotation.RestController;
 public class WebhookController {
 
     private final ChargeRequestRepository chargeRequestRepository;
-    private final ChargeService chargeService;
+    private final ChargeReconcileService chargeReconcileService;
 
     @PostMapping("/toss")
     public ResponseEntity<Void> handleTossWebhook(@RequestBody TossWebhookRequest request) {
-        log.info("[웹훅 수신] eventType={}, paymentKey={}, orderId={}, status={}",
+        log.info("[웹훅 수신] eventType={}, paymentKey={}",
                 request.eventType(),
-                request.data() != null ? request.data().paymentKey() : null,
-                request.data() != null ? request.data().orderId() : null,
-                request.data() != null ? request.data().status() : null);
+                request.data() != null ? request.data().paymentKey() : null);
 
-        // data가 없거나 DONE 상태가 아니면 무시
-        if (request.data() == null || !"DONE".equals(request.data().status())) {
-            return ResponseEntity.ok().build();
+        try {
+            if (request.data() == null || request.data().paymentKey() == null) {
+                log.warn("[웹훅] data 또는 paymentKey 없음 — 무시");
+                return ResponseEntity.ok().build();
+            }
+
+            String paymentKey = request.data().paymentKey();
+
+            ChargeRequest chargeRequest = chargeRequestRepository
+                    .findByPgPaymentKey(paymentKey)
+                    .orElse(null);
+
+            if (chargeRequest == null) {
+                log.warn("[웹훅] 매칭되는 충전 요청 없음: paymentKey={}", paymentKey);
+                return ResponseEntity.ok().build();
+            }
+
+            // 이미 완료된 건이면 스킵 (completeCharge에도 락+가드가 있지만 PG 조회 자체를 아낌)
+            if (chargeRequest.isDone()) {
+                log.info("[웹훅] 이미 처리 완료된 건: chargeRequestId={}", chargeRequest.getId());
+                return ResponseEntity.ok().build();
+            }
+
+            // PG 조회 API로 실제 상태 확인 후 처리
+            chargeReconcileService.reconcile(chargeRequest);
+
+        } catch (Exception e) {
+            // 에러 응답 시 토스가 재시도를 반복하므로 예외를 삼키고 200 반환
+            log.error("[웹훅] 처리 중 예외 발생", e);
         }
 
-        // pgPaymentKey로 충전 요청 조회
-        ChargeRequest chargeRequest = chargeRequestRepository
-                .findByPgPaymentKey(request.data().paymentKey())
-                .orElse(null);
-
-        if (chargeRequest == null) {
-            log.warn("[웹훅] 매칭되는 충전 요청 없음: paymentKey={}", request.data().paymentKey());
-            return ResponseEntity.ok().build();
-        }
-
-        // 이미 완료된 건이면 무시 (멱등성)
-        if (chargeRequest.isDone()) {
-            log.info("[웹훅] 이미 처리 완료된 건: chargeRequestId={}", chargeRequest.getId());
-            return ResponseEntity.ok().build();
-        }
-
-        // 아직 완료 안 된 건이면 처리
-        // TODO: 웹훅에서는 method 정보가 없으므로 null 처리. 필요하면 PG 조회 API로 보완.
-        chargeService.completeCharge(chargeRequest, null);
-        log.info("[웹훅] 충전 완료 처리: chargeRequestId={}", chargeRequest.getId());
-
-        // 토스 웹훅은 200 OK를 받아야 재시도를 멈춤
         return ResponseEntity.ok().build();
     }
 }
