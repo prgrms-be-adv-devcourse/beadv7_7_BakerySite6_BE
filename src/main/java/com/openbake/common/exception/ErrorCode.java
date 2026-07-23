@@ -13,7 +13,7 @@ public enum ErrorCode {
     AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "C006", "이메일 또는 비밀번호가 일치하지 않습니다."),
 
     //cart - CA
-    CART_ALREADY_EXISTS(HttpStatus.CONFLICT, "CA301", "이미 장바구니에 담긴 상품이 있습니다."),
+    CART_ALREADY_EXISTS(HttpStatus.CONFLICT, "CA001", "이미 장바구니에 담긴 상품이 있습니다."),
 
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C500", "서버 오류가 발생했습니다.");
 
