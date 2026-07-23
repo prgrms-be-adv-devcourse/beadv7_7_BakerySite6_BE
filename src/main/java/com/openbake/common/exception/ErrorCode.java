@@ -26,7 +26,10 @@ public enum ErrorCode {
     // Drop Entry Domain
     ALREADY_ENTERED(HttpStatus.CONFLICT, "E001", "이미 응모 완료된 드롭입니다."),
     DROP_OUT_OF_STOCK(HttpStatus.BAD_REQUEST, "E002", "준비된 재고가 모두 소진되었습니다."),
-    DROP_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "E003", "현재 응모 가능한 드롭 기간이 아닙니다.");
+    DROP_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "E003", "현재 응모 가능한 드롭 기간이 아닙니다."),
+
+    //cart - CA
+    CART_ALREADY_EXISTS(HttpStatus.CONFLICT, "CA001", "이미 장바구니에 담긴 상품이 있습니다.");
 
     private final HttpStatus status;
     private final String code;
