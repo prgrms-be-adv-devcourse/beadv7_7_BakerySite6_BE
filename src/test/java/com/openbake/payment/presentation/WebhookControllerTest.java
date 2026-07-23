@@ -10,6 +10,7 @@ import com.openbake.payment.infrastructure.WalletTransactionRepository;
 import com.openbake.payment.infrastructure.pg.PgClient;
 import com.openbake.payment.infrastructure.pg.PgPaymentStatus;
 import com.openbake.payment.presentation.dto.ChargeCreateResponse;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 
@@ -58,13 +60,24 @@ class WebhookControllerTest {
     @MockitoBean
     private PgClient pgClient;
 
+    @Autowired
+    private TransactionTemplate txTemplate;
+
+    @Autowired
+    private EntityManager em;
+
     private static final Long MEMBER_ID = 99901L;
 
     @AfterEach
     void cleanUp() {
-        walletTransactionRepository.deleteAll();
-        chargeRequestRepository.deleteAll();
-        depositAccountRepository.deleteAll();
+        txTemplate.executeWithoutResult(status -> {
+            em.createQuery("DELETE FROM WalletTransaction w WHERE w.depositAccount.memberId = :id")
+                    .setParameter("id", MEMBER_ID).executeUpdate();
+            em.createQuery("DELETE FROM ChargeRequest c WHERE c.memberId = :id")
+                    .setParameter("id", MEMBER_ID).executeUpdate();
+            em.createQuery("DELETE FROM DepositAccount d WHERE d.memberId = :id")
+                    .setParameter("id", MEMBER_ID).executeUpdate();
+        });
     }
 
     /**

@@ -14,6 +14,7 @@ import com.openbake.payment.infrastructure.pg.PgClient;
 import com.openbake.payment.infrastructure.pg.PgUnknownResultException;
 import com.openbake.payment.presentation.dto.ChargeApproveResponse;
 import com.openbake.payment.presentation.dto.ChargeCreateResponse;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,8 +22,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -68,17 +71,31 @@ class ChargeFacadeTest {
     @Autowired
     private WalletTransactionRepository walletTransactionRepository;
 
+    @Autowired
+    private TransactionTemplate txTemplate;
+
+    @Autowired
+    private EntityManager em;
+
     // memberId 충돌 방지 — 다른 테스트 클래스와 겹치지 않는 값
     private static final Long MEMBER_ID_SUCCESS = 88801L;
     private static final Long MEMBER_ID_FAIL = 88802L;
     private static final Long MEMBER_ID_CONCURRENT = 88803L;
     private static final Long MEMBER_ID_UNKNOWN = 88804L;
 
+    private static final List<Long> MEMBER_IDS = List.of(
+            MEMBER_ID_SUCCESS, MEMBER_ID_FAIL, MEMBER_ID_CONCURRENT, MEMBER_ID_UNKNOWN);
+
     @AfterEach
     void cleanUp() {
-        walletTransactionRepository.deleteAll();
-        chargeRequestRepository.deleteAll();
-        depositAccountRepository.deleteAll();
+        txTemplate.executeWithoutResult(status -> {
+            em.createQuery("DELETE FROM WalletTransaction w WHERE w.depositAccount.memberId IN :ids")
+                    .setParameter("ids", MEMBER_IDS).executeUpdate();
+            em.createQuery("DELETE FROM ChargeRequest c WHERE c.memberId IN :ids")
+                    .setParameter("ids", MEMBER_IDS).executeUpdate();
+            em.createQuery("DELETE FROM DepositAccount d WHERE d.memberId IN :ids")
+                    .setParameter("ids", MEMBER_IDS).executeUpdate();
+        });
     }
 
     @Test
