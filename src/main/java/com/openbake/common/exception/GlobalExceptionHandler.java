@@ -49,12 +49,6 @@ public class GlobalExceptionHandler {
         return build(ErrorCode.INTERNAL_ERROR.getStatus(), ErrorCode.INTERNAL_ERROR.getCode(), ErrorCode.INTERNAL_ERROR.getMessage());
     }
 
-    // DTO @Valid 검증 실패 시 처리
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
-        String errorMessage = e.getBindingResult().getAllErrors().getFirst().getDefaultMessage();
-        return build(ErrorCode.INVALID_INPUT.getStatus(), ErrorCode.INVALID_INPUT.getCode(), errorMessage);
-    }
 
     private ResponseEntity<ApiResponse<Void>> build(HttpStatus status, String code, String message) {
         return ResponseEntity.status(status).body(ApiResponse.fail(new ApiError(code, message)));
