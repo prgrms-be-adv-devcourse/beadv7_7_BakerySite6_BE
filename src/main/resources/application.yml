@@ -9,6 +9,11 @@ spring:
     hikari:
       connection-init-sql: SET SESSION lock_timeout = '10s'
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -40,6 +45,32 @@ payment:
     secret-key: ${TOSS_SECRET_KEY:test_sk_xxxxxxxxxxxxxxx}
     connect-timeout: 3000
     read-timeout: 15000
+# Batch 설정 추가
+# job.enabled: false : 서버가 시작될 때 정산이 자동 실행되는 것을 막고,
+# 나중에 스케줄러나 API가 명시적으로 실행하도록 설정
+# Spring Batch는 실행 이력을 저장하기 위한 메타데이터 테이블 사용을 위함
+# (최초 1회만 사용 또는 script로 생성되는지 확인 예정)
+  sql:
+    init:
+      mode: never
+      schema-locations: classpath:org/springframework/batch/core/schema-postgresql.sql
+
+  batch:
+    job:
+      enabled: false
+# 매월 1일 오후 3시 "0 0 15 1 * *"
+settlement:
+  batch:
+    monthly:
+      cron: "-"
+      zone: Asia/Seoul
+
+openbake:
+  cart:
+    # 장바구니 만료 시간 (임시값, 팀 결정 대기 중)
+    # 장바구니 생성 = 재고 선점이라 결제하지 않고 방치되면 재고가 묶인다.
+    # 짧을수록 재고 회수는 빠르지만 결제 도중 만료될 위험이 커진다.
+    ttl: 15m
 
 logging:
   level:
@@ -50,3 +81,15 @@ management:
     web:
       exposure:
         include: health,info
+
+oauth:
+  providers:
+    google:
+      issuer: https://accounts.google.com
+      jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+      client-id: ${GOOGLE_CLIENT_ID}
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: 1800000    # 30분 (ms)
+  refresh-token-expiration: 1209600000 # 14일 (ms)

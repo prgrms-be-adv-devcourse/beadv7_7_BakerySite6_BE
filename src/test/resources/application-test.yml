@@ -18,3 +18,7 @@ payment:
     secret-key: test_sk_dummy_for_testing
     connect-timeout: 3000
     read-timeout: 15000
+jwt:
+  secret: test-secret-key-for-ci-do-not-use-in-production-32bytes+
+  access-token-expiration: 1800000
+  refresh-token-expiration: 1209600000

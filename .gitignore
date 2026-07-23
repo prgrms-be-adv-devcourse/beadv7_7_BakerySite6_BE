@@ -52,3 +52,6 @@ src/main/resources/static/
 ### OS ###
 .DS_Store
 Thumbs.db
+
+### local ###
+run-local.sh
