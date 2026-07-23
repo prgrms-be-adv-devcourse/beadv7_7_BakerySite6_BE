@@ -51,4 +51,13 @@ public class AuthCredential {
         return auth;
     }
 
+    public void changePassword(String newPassword) {
+        this.passwordHash = newPassword;
+    }
+
+    public void withdraw() {
+        this.email = "withdrawn-" + this.memberId + "@deleted.local";
+        this.passwordHash = null;
+    }
+
 }

@@ -10,6 +10,12 @@ public enum ErrorCode {
     ENTITY_NOT_FOUND(HttpStatus.NOT_FOUND, "C003", "대상을 찾을 수 없습니다."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C500", "서버 오류가 발생했습니다."),
 
+    // Member Domain
+    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "ME001", "이미 존재하는 리소스입니다."),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "ME002", "유효하지 않은 인증 토큰입니다."),
+    AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "ME003", "이메일 또는 비밀번호가 일치하지 않습니다."),
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "ME004", "권한이 없습니다.."),
+
     // Drop Domain
     DROP_NOT_FOUND(HttpStatus.NOT_FOUND, "D001", "존재하지 않는 드롭입니다."),
     INVALID_DROP_TIME(HttpStatus.BAD_REQUEST, "D002", "드롭 시작 시간 또는 마감 시간이 유효하지 않습니다."),
@@ -21,9 +27,6 @@ public enum ErrorCode {
     ALREADY_ENTERED(HttpStatus.CONFLICT, "E001", "이미 응모 완료된 드롭입니다."),
     DROP_OUT_OF_STOCK(HttpStatus.BAD_REQUEST, "E002", "준비된 재고가 모두 소진되었습니다."),
     DROP_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "E003", "현재 응모 가능한 드롭 기간이 아닙니다."),
-    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "C004", "이미 존재하는 리소스입니다."),
-    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "C005", "유효하지 않은 인증 토큰입니다."),
-    AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "C006", "이메일 또는 비밀번호가 일치하지 않습니다."),
 
     //cart - CA
     CART_ALREADY_EXISTS(HttpStatus.CONFLICT, "CA001", "이미 장바구니에 담긴 상품이 있습니다.");

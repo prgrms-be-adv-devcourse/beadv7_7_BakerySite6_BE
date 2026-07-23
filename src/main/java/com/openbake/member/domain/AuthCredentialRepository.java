@@ -7,4 +7,5 @@ public interface AuthCredentialRepository {
     Optional<AuthCredential> findByProviderAndProviderId(AuthProvider provider, String providerId);
     boolean existsByProviderAndEmail(AuthProvider provider, String email);
     Optional<AuthCredential> findByProviderAndEmail(AuthProvider provider, String email);
+    Optional<AuthCredential> findByMemberId(Long memberId);
 }
