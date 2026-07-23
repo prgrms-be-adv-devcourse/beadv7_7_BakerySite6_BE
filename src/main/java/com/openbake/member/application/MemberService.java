@@ -27,7 +27,7 @@ public class MemberService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final AccessTokenRepository accessTokenRepository;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public MemberResponse getMemberById(Long id) {
         if (!currentMemberProvider.hasRole(Role.ADMIN) && !currentMemberProvider.getId().equals(id)) {
             throw new AccessDeniedException();
