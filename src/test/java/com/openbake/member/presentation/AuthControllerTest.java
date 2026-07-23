@@ -81,7 +81,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C004"));
+                .andExpect(jsonPath("$.error.code").value("ME001"));
     }
 
     @Test
@@ -154,7 +154,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C004"));
+                .andExpect(jsonPath("$.error.code").value("ME001"));
     }
 
     @Test
@@ -169,7 +169,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C005"));
+                .andExpect(jsonPath("$.error.code").value("ME002"));
     }
 
     @Test
@@ -214,7 +214,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C006"));
+                .andExpect(jsonPath("$.error.code").value("ME003"));
     }
 
     @Test
@@ -270,7 +270,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C005"));
+                .andExpect(jsonPath("$.error.code").value("ME002"));
     }
 
     @Test
@@ -309,7 +309,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C005"));
+                .andExpect(jsonPath("$.error.code").value("ME002"));
     }
 
     @Test

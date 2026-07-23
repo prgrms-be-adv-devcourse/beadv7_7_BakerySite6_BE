@@ -76,7 +76,7 @@ class MemberControllerTest {
         mockMvc.perform(get("/api/v1/members/1"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C007"));
+                .andExpect(jsonPath("$.error.code").value("ME004"));
     }
 
     @Test
@@ -131,7 +131,7 @@ class MemberControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C007"));
+                .andExpect(jsonPath("$.error.code").value("ME004"));
     }
 
     @Test
@@ -170,7 +170,7 @@ class MemberControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C007"));
+                .andExpect(jsonPath("$.error.code").value("ME004"));
     }
 
     @Test
@@ -185,7 +185,7 @@ class MemberControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C006"));
+                .andExpect(jsonPath("$.error.code").value("ME003"));
     }
 
     @Test
@@ -219,7 +219,7 @@ class MemberControllerTest {
         mockMvc.perform(delete("/api/v1/members/1"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C007"));
+                .andExpect(jsonPath("$.error.code").value("ME004"));
     }
 
     @Test
