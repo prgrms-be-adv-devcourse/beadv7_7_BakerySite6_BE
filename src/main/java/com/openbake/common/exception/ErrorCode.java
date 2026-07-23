@@ -29,7 +29,7 @@ public enum ErrorCode {
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "P011", "존재하지 않는 결제입니다."),
     INVALID_PAYMENT_STATUS(HttpStatus.CONFLICT, "P012", "처리할 수 없는 결제 상태입니다."),
     DEPOSIT_ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "P013", "예치금 계좌를 찾을 수 없습니다."),
-    PLATFORM_ACCOUNT_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "P014", "PLATFORM 계정이 존재하지 않습니다.");
+    PLATFORM_ACCOUNT_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "P014", "PLATFORM 계정이 존재하지 않습니다."),
     // Member Domain
     DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "ME001", "이미 존재하는 리소스입니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "ME002", "유효하지 않은 인증 토큰입니다."),
