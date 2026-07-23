@@ -2,6 +2,7 @@ package com.openbake.settlement.presentation;
 
 import com.openbake.common.exception.GlobalExceptionHandler;
 import com.openbake.settlement.application.MonthlySettlementBatchLauncher;
+import com.openbake.settlement.application.MonthlySettlementBatchQueryService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +25,16 @@ class MonthlySettlementBatchControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    /** @RequiredArgsConstructor로 Controller가 생성되므로,
+     * 생성자에 필요한 모든 의존성을 @MockitoBean으로 제공
+     **/
     @MockitoBean
     private MonthlySettlementBatchLauncher
             monthlySettlementBatchLauncher;
+
+    @MockitoBean
+    private MonthlySettlementBatchQueryService
+            monthlySettlementBatchQueryService;
 
     @Test
     @DisplayName("periodStart가 누락되면 400 응답을 반환한다")

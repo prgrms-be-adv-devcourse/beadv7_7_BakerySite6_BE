@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -51,5 +52,26 @@ public class SettlementRepositoryAdapter
                         periodStart,
                         periodEnd
                 );
+    }
+
+    @Override
+    public List<Settlement> findAllBySellerId(
+            Long sellerId
+    ) {
+        return settlementJpaRepository
+                .findAllBySellerIdOrderByPeriodStartDescIdDesc(
+                        sellerId
+                );
+    }
+
+    @Override
+    public Optional<Settlement> findByIdAndSellerId(
+            Long settlementId,
+            Long sellerId
+    ) {
+        return settlementJpaRepository.findByIdAndSellerId(
+                settlementId,
+                sellerId
+        );
     }
 }

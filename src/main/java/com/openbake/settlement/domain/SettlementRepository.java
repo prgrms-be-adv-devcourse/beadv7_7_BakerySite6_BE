@@ -1,6 +1,7 @@
 package com.openbake.settlement.domain;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface SettlementRepository {
@@ -22,5 +23,14 @@ public interface SettlementRepository {
             Long sellerId,
             LocalDate periodStart,
             LocalDate periodEnd
+    );
+
+    List<Settlement> findAllBySellerId(
+            Long sellerId
+    );
+
+    Optional<Settlement> findByIdAndSellerId(
+            Long settlementId,
+            Long sellerId
     );
 }
