@@ -1,5 +1,6 @@
 package com.openbake.member.infrastructure.jwt;
 
+import com.openbake.member.domain.AccessTokenRepository;
 import com.openbake.member.domain.Role;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,13 +25,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final AccessTokenRepository accessTokenRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String token = resolveToken(request);
 
-        if (token != null && jwtTokenProvider.isValid(token)) {
+        if (token != null && jwtTokenProvider.isValid(token) && !accessTokenRepository.isBlacklisted(token)) {
             Long memberId = jwtTokenProvider.getMemberId(token);
             Role role = jwtTokenProvider.getRole(token);
 

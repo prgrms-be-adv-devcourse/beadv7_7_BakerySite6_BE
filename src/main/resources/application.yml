@@ -55,6 +55,13 @@ settlement:
       cron: "-"
       zone: Asia/Seoul
 
+openbake:
+  cart:
+    # 장바구니 만료 시간 (임시값, 팀 결정 대기 중)
+    # 장바구니 생성 = 재고 선점이라 결제하지 않고 방치되면 재고가 묶인다.
+    # 짧을수록 재고 회수는 빠르지만 결제 도중 만료될 위험이 커진다.
+    ttl: 15m
+
 logging:
   level:
     org.hibernate.orm.jdbc.bind: trace

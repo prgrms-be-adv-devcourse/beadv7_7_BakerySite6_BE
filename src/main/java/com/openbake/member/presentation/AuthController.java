@@ -3,7 +3,7 @@ package com.openbake.member.presentation;
 import com.openbake.common.response.ApiResponse;
 import com.openbake.member.application.AuthService;
 import com.openbake.member.domain.AuthProvider;
-import com.openbake.member.presentation.dto.*;
+import com.openbake.member.presentation.dto.auth.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PathVariable;

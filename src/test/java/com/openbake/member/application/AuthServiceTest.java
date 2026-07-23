@@ -4,6 +4,7 @@ import com.openbake.common.exception.AuthenticationFailedException;
 import com.openbake.common.exception.DuplicateMemberException;
 import com.openbake.common.exception.EntityNotFoundException;
 import com.openbake.common.exception.InvalidRefreshTokenException;
+import com.openbake.member.domain.AccessTokenRepository;
 import com.openbake.member.domain.AuthCredential;
 import com.openbake.member.domain.AuthProvider;
 import com.openbake.member.domain.Member;
@@ -14,15 +15,15 @@ import com.openbake.member.infrastructure.MemberRepositoryImpl;
 import com.openbake.member.infrastructure.jwt.JwtTokenProvider;
 import com.openbake.member.infrastructure.oauth.OidcIdTokenVerifier;
 import com.openbake.member.infrastructure.oauth.OidcIdentity;
-import com.openbake.member.presentation.dto.LocalLoginRequest;
-import com.openbake.member.presentation.dto.LocalLoginResponse;
-import com.openbake.member.presentation.dto.LogoutRequest;
-import com.openbake.member.presentation.dto.OAuthLoginRequest;
-import com.openbake.member.presentation.dto.OAuthLoginResponse;
-import com.openbake.member.presentation.dto.ReissueRequest;
-import com.openbake.member.presentation.dto.ReissueResponse;
-import com.openbake.member.presentation.dto.SignupRequest;
-import com.openbake.member.presentation.dto.SignupResponse;
+import com.openbake.member.presentation.dto.auth.LocalLoginRequest;
+import com.openbake.member.presentation.dto.auth.LocalLoginResponse;
+import com.openbake.member.presentation.dto.auth.LogoutRequest;
+import com.openbake.member.presentation.dto.auth.OAuthLoginRequest;
+import com.openbake.member.presentation.dto.auth.OAuthLoginResponse;
+import com.openbake.member.presentation.dto.auth.ReissueRequest;
+import com.openbake.member.presentation.dto.auth.ReissueResponse;
+import com.openbake.member.presentation.dto.auth.SignupRequest;
+import com.openbake.member.presentation.dto.auth.SignupResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -63,6 +64,9 @@ class AuthServiceTest {
 
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
+    private AccessTokenRepository accessTokenRepository;
 
     @InjectMocks
     private AuthService authService;
@@ -154,6 +158,7 @@ class AuthServiceTest {
         assertThat(savedCredential.getProviderId()).isEqualTo("google-sub-1");
         assertThat(savedCredential.getEmail()).isEqualTo("new@example.com");
 
+        verify(accessTokenRepository).save(2L, "access-token");
         verify(refreshTokenRepository).save(2L, "refresh-token");
     }
 
@@ -186,6 +191,7 @@ class AuthServiceTest {
 
         verify(memberRepository, never()).save(any());
         verify(authCredentialRepository, never()).save(any());
+        verify(accessTokenRepository).save(5L, "access-token");
         verify(refreshTokenRepository).save(5L, "refresh-token");
     }
 
@@ -232,6 +238,7 @@ class AuthServiceTest {
         assertThat(response.accessToken()).isEqualTo("access-token");
         assertThat(response.refreshToken()).isEqualTo("refresh-token");
 
+        verify(accessTokenRepository).save(1L, "access-token");
         verify(refreshTokenRepository).save(1L, "refresh-token");
     }
 
@@ -301,6 +308,7 @@ class AuthServiceTest {
         assertThat(response.accessToken()).isEqualTo("new-access-token");
         assertThat(response.refreshToken()).isEqualTo("new-refresh-token");
 
+        verify(accessTokenRepository).save(1L, "new-access-token");
         verify(refreshTokenRepository).save(1L, "new-refresh-token");
     }
 
