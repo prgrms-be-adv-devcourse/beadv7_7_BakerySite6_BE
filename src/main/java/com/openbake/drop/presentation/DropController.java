@@ -4,7 +4,7 @@ package com.openbake.drop.presentation;
 import com.openbake.common.response.ApiResponse;
 import com.openbake.drop.application.DropService;
 import com.openbake.drop.presentation.dto.DropProductInfoRequest;
-import com.openbake.drop.presentation.dto.DropProductInfoResponse;
+import com.openbake.drop.application.dto.DropProductInfoResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

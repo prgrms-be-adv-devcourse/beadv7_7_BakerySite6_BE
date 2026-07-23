@@ -2,7 +2,7 @@ package com.openbake.drop.application;
 
 import com.openbake.drop.domain.*;
 import com.openbake.drop.presentation.dto.DropProductInfoRequest;
-import com.openbake.drop.presentation.dto.DropProductInfoResponse;
+import com.openbake.drop.application.dto.DropProductInfoResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.ArgumentMatchers.any;
 @ExtendWith(MockitoExtension.class)
 class DropServiceTest {
 
