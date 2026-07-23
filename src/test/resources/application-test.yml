@@ -9,3 +9,8 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+
+jwt:
+  secret: test-secret-key-for-ci-do-not-use-in-production-32bytes+
+  access-token-expiration: 1800000
+  refresh-token-expiration: 1209600000
