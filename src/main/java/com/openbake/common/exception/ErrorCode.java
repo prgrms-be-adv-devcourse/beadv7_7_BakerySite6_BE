@@ -16,6 +16,9 @@ public enum ErrorCode {
     AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "ME003", "이메일 또는 비밀번호가 일치하지 않습니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "ME004", "권한이 없습니다.."),
 
+    // Seller Domain - SE
+    BUSINESS_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "SE001", "사업자 인증에 실패했습니다."),
+
     // Drop Domain
     DROP_NOT_FOUND(HttpStatus.NOT_FOUND, "D001", "존재하지 않는 드롭입니다."),
     INVALID_DROP_TIME(HttpStatus.BAD_REQUEST, "D002", "드롭 시작 시간 또는 마감 시간이 유효하지 않습니다."),
@@ -30,6 +33,7 @@ public enum ErrorCode {
 
     //cart - CA
     CART_ALREADY_EXISTS(HttpStatus.CONFLICT, "CA001", "이미 장바구니에 담긴 상품이 있습니다.");
+
 
     private final HttpStatus status;
     private final String code;
