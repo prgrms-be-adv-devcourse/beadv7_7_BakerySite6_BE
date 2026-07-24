@@ -6,6 +6,8 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    hikari:
+      connection-init-sql: SET SESSION lock_timeout = '10s'
 
   data:
     redis:
@@ -35,6 +37,14 @@ spring:
 # → 스키마가 확정되면 재논의 필요.
 # ───────────────────────────────────────────────────────
 
+# ── 토스페이먼츠 설정 ──────────────────────────────────────
+# 테스트 시크릿키는 토스 개발자센터에서 발급.
+# 운영 시크릿키는 환경변수로 주입.
+payment:
+  toss:
+    secret-key: ${TOSS_SECRET_KEY:test_sk_xxxxxxxxxxxxxxx}
+    connect-timeout: 3000
+    read-timeout: 15000
 # Batch 설정 추가
 # job.enabled: false : 서버가 시작될 때 정산이 자동 실행되는 것을 막고,
 # 나중에 스케줄러나 API가 명시적으로 실행하도록 설정

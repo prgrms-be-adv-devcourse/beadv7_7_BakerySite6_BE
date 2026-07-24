@@ -12,6 +12,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import com.openbake.common.exception.BusinessException;
+import com.openbake.common.exception.ErrorCode;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -74,7 +77,7 @@ public class DepositAccount {
         validateMemberAccount();
         validatePositiveAmount(amount);
         if (this.balance.compareTo(amount) < 0) {
-            throw new IllegalStateException("예치금 잔액이 부족합니다.");
+            throw new BusinessException(ErrorCode.INSUFFICIENT_BALANCE);
         }
         this.balance = this.balance.subtract(amount);
     }
@@ -89,13 +92,13 @@ public class DepositAccount {
     // PLATFORM 계좌는 잔액 변경 불가
     private void validateMemberAccount() {
         if (this.accountType != AccountType.MEMBER) {
-            throw new IllegalStateException("MEMBER 계정만 잔액 변경이 가능합니다.");
+            throw new BusinessException(ErrorCode.INVALID_STATE, "MEMBER 계정만 잔액 변경이 가능합니다.");
         }
     }
 
     private void validatePositiveAmount(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("금액은 0보다 커야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "금액은 0보다 커야 합니다.");
         }
     }
 }

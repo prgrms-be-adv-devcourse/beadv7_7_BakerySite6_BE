@@ -1,5 +1,7 @@
 package com.openbake.payment.application;
 
+import com.openbake.common.exception.BusinessException;
+import com.openbake.common.exception.ErrorCode;
 import com.openbake.payment.domain.AccountType;
 import com.openbake.payment.domain.DepositAccount;
 import com.openbake.payment.domain.OrderPayment;
@@ -35,7 +37,7 @@ public class PaymentService {
         DepositAccount memberAccount = getOrCreateMemberAccount(memberId);
         DepositAccount platformAccount = getPlatformAccount();
 
-        // 회원 예치금 차감 — 잔액 부족하면 IllegalStateException
+        // 회원 예치금 차감 — 잔액 부족하면 BusinessException(INSUFFICIENT_BALANCE)
         memberAccount.deduct(amount);
 
         // 결제 기록 생성
@@ -74,13 +76,13 @@ public class PaymentService {
     @Transactional
     public void refund(Long orderId) {
         OrderPayment payment = orderPaymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 결제입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
         // PAID가 아니면 예외 발생
         payment.refund();
 
-        DepositAccount memberAccount = depositAccountRepository.findByMemberId(payment.getMemberId())
-                .orElseThrow(() -> new IllegalStateException("예치금 계좌를 찾을 수 없습니다."));
+        DepositAccount memberAccount = depositAccountRepository.findByMemberIdForUpdate(payment.getMemberId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEPOSIT_ACCOUNT_NOT_FOUND));
         DepositAccount platformAccount = getPlatformAccount();
 
         // 회원 예치금 복구
@@ -114,15 +116,15 @@ public class PaymentService {
     @Transactional
     public void confirmPayment(Long orderId) {
         OrderPayment payment = orderPaymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 결제입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
         // PAID가 아니면 예외 발생
         payment.confirm();
     }
 
-    // 회원 계좌 조회. 없으면 새로 생성 (최초 결제 시 자동 생성)
+    // 회원 계좌 조회 (비관적 락) — 잔액 변경 시 Lost Update 방지
     private DepositAccount getOrCreateMemberAccount(Long memberId) {
-        return depositAccountRepository.findByMemberId(memberId)
+        return depositAccountRepository.findByMemberIdForUpdate(memberId)
                 .orElseGet(() -> depositAccountRepository.save(
                         DepositAccount.createMemberAccount(memberId)
                 ));
@@ -130,9 +132,7 @@ public class PaymentService {
 
     // 플랫폼 계좌 조회. 시스템에 1개만 존재하는 수익 집계용 가상 계좌
     private DepositAccount getPlatformAccount() {
-        return depositAccountRepository.findAll().stream()
-                .filter(a -> a.getAccountType() == AccountType.PLATFORM)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("PLATFORM 계정이 존재하지 않습니다."));
+        return depositAccountRepository.findByAccountType(AccountType.PLATFORM)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PLATFORM_ACCOUNT_NOT_FOUND));
     }
 }
