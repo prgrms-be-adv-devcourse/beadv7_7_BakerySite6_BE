@@ -5,7 +5,7 @@ import com.openbake.common.exception.AccountVerificationFailedException;
 import com.openbake.common.exception.BusinessVerificationFailedException;
 import com.openbake.common.exception.EntityNotFoundException;
 import com.openbake.common.exception.InvalidSettlementAccountException;
-import com.openbake.member.infrastructure.CurrentMemberProvider;
+import com.openbake.common.security.CurrentMemberProvider;
 import com.openbake.seller.domain.AccountVerificationRepository;
 import com.openbake.seller.domain.AccountVerificationSession;
 import com.openbake.seller.domain.VerifiedAccount;
