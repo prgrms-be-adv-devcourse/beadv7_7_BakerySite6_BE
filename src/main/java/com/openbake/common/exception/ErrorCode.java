@@ -30,6 +30,10 @@ public enum ErrorCode {
 
     //cart - CA
     CART_ALREADY_EXISTS(HttpStatus.CONFLICT, "CA001", "이미 장바구니에 담긴 상품이 있습니다."),
+    CART_NOT_FOUND(HttpStatus.NOT_FOUND, "CA002", "장바구니가 없습니다."),
+    CART_EXPIRED(HttpStatus.CONFLICT, "CA003", "장바구니가 만료되었습니다. 다시 담아주세요."),
+    CART_INVALID_PICKUP_DATE(HttpStatus.BAD_REQUEST, "CA004", "선택할 수 없는 픽업 날짜입니다."),
+    CART_PICKUP_DATE_UNAVAILABLE(HttpStatus.CONFLICT, "CA005", "이미 지난 픽업 날짜입니다."),
 
     // Settlement - ST
     SETTLEMENT_BATCH_ALREADY_COMPLETED(HttpStatus.CONFLICT,"S001","동일한 정산 기간의 배치가 이미 완료됐습니다."),
