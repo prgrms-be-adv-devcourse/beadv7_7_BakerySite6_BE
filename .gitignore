@@ -43,6 +43,12 @@ ard/
 ### Docs (로컬 전용) ###
 docs/
 
+### Manual Test (로컬 전용) ###
+manual-test/
+
+### Static test pages (로컬 전용) ###
+src/main/resources/static/
+
 ### OS ###
 .DS_Store
 Thumbs.db

@@ -1,0 +1,259 @@
+{
+  "info": {
+    "name": "OpenBake Payment API",
+    "description": "결제 도메인 API 테스트 컬렉션",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "memberId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. 예치금 조회 (계좌 자동 생성)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/deposit/account/{{memberId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "deposit", "account", "{{memberId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('응답에 balance 포함', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.data).to.have.property('balance');",
+              "    pm.expect(json.data).to.have.property('hasChargeInProgress');",
+              "    pm.expect(json.data.memberId).to.eql(Number(pm.variables.get('memberId')));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. 충전 요청 생성",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"memberId\": 1,\n    \"amount\": 10000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/deposit/charges",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "deposit", "charges"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test('pgOrderId, orderName, expiresAt 생성됨', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.data).to.have.property('pgOrderId');",
+              "    pm.expect(json.data).to.have.property('orderName');",
+              "    pm.expect(json.data).to.have.property('expiresAt');",
+              "    pm.expect(json.data.pgOrderId).to.be.a('string');",
+              "    // 다음 요청에서 쓸 수 있도록 저장",
+              "    pm.collectionVariables.set('pgOrderId', json.data.pgOrderId);",
+              "    pm.collectionVariables.set('chargeRequestId', json.data.chargeRequestId);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. 충전 승인 (PG 연동)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"memberId\": 1,\n    \"paymentKey\": \"test_payment_key_001\",\n    \"orderId\": \"{{pgOrderId}}\",\n    \"amount\": 10000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/deposit/charges/confirm",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "deposit", "charges", "confirm"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('충전 완료', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.data).to.have.property('chargedAmount');",
+              "    pm.expect(json.data).to.have.property('balanceAfter');",
+              "    pm.expect(json.data).to.have.property('status');",
+              "    pm.expect(json.data).to.have.property('method');",
+              "    pm.expect(json.data).to.have.property('approvedAt');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. 충전 후 잔액 확인",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/deposit/account/{{memberId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "deposit", "account", "{{memberId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('잔액이 증가했다', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.data).to.have.property('hasChargeInProgress');",
+              "    pm.expect(Number(json.data.balance)).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. 중복 충전 요청 (에러 확인)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"memberId\": 1,\n    \"amount\": 20000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/deposit/charges",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "deposit", "charges"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// 3번(승인)을 먼저 실행했으면 DONE이므로 201(새 요청), 있으면 409(중복)",
+              "pm.test('201 Created 또는 409 Conflict', function () {",
+              "    var status = pm.response.code;",
+              "    pm.expect([201, 409]).to.include(status);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. 웹훅 수신 테스트",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"eventType\": \"PAYMENT_STATUS_CHANGED\",\n    \"data\": {\n        \"paymentKey\": \"test_payment_key_001\",\n        \"orderId\": \"{{pgOrderId}}\",\n        \"status\": \"DONE\"\n    }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/webhooks/pg/toss",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "webhooks", "pg", "toss"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK (멱등성 - 이미 처리된 건이면 무시)', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. 존재하지 않는 회원 예치금 조회",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/deposit/account/9999",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "deposit", "account", "9999"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('0원 계좌 자동 생성', function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.data).to.have.property('hasChargeInProgress');",
+              "    pm.expect(Number(json.data.balance)).to.eql(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

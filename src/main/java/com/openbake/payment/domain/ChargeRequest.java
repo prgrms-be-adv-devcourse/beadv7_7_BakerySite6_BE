@@ -12,6 +12,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import com.openbake.common.exception.BusinessException;
+import com.openbake.common.exception.ErrorCode;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -128,26 +131,27 @@ public class ChargeRequest {
     // 본인 충전 요청인지 확인
     public void validateOwner(Long memberId) {
         if (!this.memberId.equals(memberId)) {
-            throw new IllegalStateException("본인의 충전 요청이 아닙니다.");
+            throw new BusinessException(ErrorCode.CHARGE_OWNER_MISMATCH);
         }
     }
 
     // PG에서 돌아온 금액이 요청 금액과 일치하는지 확인 (위변조 방지)
     public void validateAmountMatches(BigDecimal amount) {
         if (this.amount.compareTo(amount) != 0) {
-            throw new IllegalArgumentException("충전 금액이 일치하지 않습니다.");
+            throw new BusinessException(ErrorCode.CHARGE_AMOUNT_MISMATCH);
         }
     }
 
     private void validateStatus(ChargeStatus expected) {
         if (this.status != expected) {
-            throw new IllegalStateException("승인할 수 없는 상태입니다: " + this.status);
+            throw new BusinessException(ErrorCode.CHARGE_NOT_APPROVABLE,
+                    "승인할 수 없는 상태입니다: " + this.status);
         }
     }
 
     private void validateNotExpired() {
         if (isExpired()) {
-            throw new IllegalStateException("만료된 충전 요청입니다.");
+            throw new BusinessException(ErrorCode.CHARGE_EXPIRED);
         }
     }
 }

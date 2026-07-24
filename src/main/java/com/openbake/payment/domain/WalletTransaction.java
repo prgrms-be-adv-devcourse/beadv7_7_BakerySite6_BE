@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,7 +25,12 @@ import java.time.LocalDateTime;
  * 잘못된 거래는 새로운 거래(환불 등)를 추가해서 상쇄한다.
  */
 @Entity
-@Table(name = "wallet_transactions")
+@Table(name = "wallet_transactions", uniqueConstraints = {
+        @UniqueConstraint(
+                name = "uk_wallet_tx_account_ref",
+                columnNames = {"deposit_account_id", "reference_type", "reference_id", "transaction_type"}
+        )
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class WalletTransaction {
