@@ -32,11 +32,12 @@ public enum ErrorCode {
     CART_ALREADY_EXISTS(HttpStatus.CONFLICT, "CA001", "이미 장바구니에 담긴 상품이 있습니다."),
 
     // Settlement - ST
-    SETTLEMENT_BATCH_ALREADY_COMPLETED(HttpStatus.CONFLICT,"S001","동일한 정산 기간의 배치가 이미 완료됐습니다."),
-    SETTLEMENT_BATCH_ALREADY_RUNNING(HttpStatus.CONFLICT,"S002", "동일한 정산 기간의 배치가 이미 실행 중입니다."),
-    SETTLEMENT_BATCH_RESTART_FAILED(HttpStatus.CONFLICT, "S003", "정산 배치를 재시작할 수 없습니다."),
-    INVALID_SETTLEMENT_BATCH_PARAMETERS(HttpStatus.BAD_REQUEST, "S004", "정산 배치 파라미터가 올바르지 않습니다."),
-    SETTLEMENT_BATCH_EXECUTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "S500", "월 정산 배치 실행 중 오류가 발생했습니다.");
+    SETTLEMENT_BATCH_ALREADY_COMPLETED(HttpStatus.CONFLICT,"ST001","동일한 정산 기간의 배치가 이미 완료됐습니다."),
+    SETTLEMENT_BATCH_ALREADY_RUNNING(HttpStatus.CONFLICT,"ST002", "동일한 정산 기간의 배치가 이미 실행 중입니다."),
+    SETTLEMENT_BATCH_RESTART_FAILED(HttpStatus.CONFLICT, "ST003", "정산 배치를 재시작할 수 없습니다."),
+    INVALID_SETTLEMENT_BATCH_PARAMETERS(HttpStatus.BAD_REQUEST, "ST004", "정산 배치 파라미터가 올바르지 않습니다."),
+    DUPLICATE_PAYOUT_REQUEST(HttpStatus.CONFLICT, "ST005", "이미 처리된 지급 요청입니다."),
+    SETTLEMENT_BATCH_EXECUTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "ST500", "월 정산 배치 실행 중 오류가 발생했습니다.");
 
     private final HttpStatus status;
     private final String code;
