@@ -69,8 +69,18 @@ public class DropEntry {
 
     // 주문/재고 선점 성공 시 상태 변경
     public void completeReservation() { this.entryStatus = EntryStatus.RESERVED;}
-    // 재고 부족 또는 주문 실패 시 상태 변경
-    public void failEntry() {
+
+    // 취소
+    public void cancelEntry() {
+        this.entryStatus = EntryStatus.CANCELLED;
+    }
+
+    public void completePayment(){
+        this.entryStatus = EntryStatus.COMPLETED;
+    }
+
+    // 재고 부족으로 인한 주문 실패 또는 결제 실패
+    public void failPaymentOrOrder(){
         this.entryStatus = EntryStatus.FAILED;
     }
 }
