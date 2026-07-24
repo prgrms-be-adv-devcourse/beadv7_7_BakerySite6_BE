@@ -1,5 +1,6 @@
 package com.openbake.seller.domain;
 
+import com.openbake.common.exception.InvalidApplicationStatusException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -87,5 +88,20 @@ public class Seller {
         if (accountVerified) {
             this.accountVerifiedAt = LocalDateTime.now();
         }
+    }
+
+    public void approve() {
+        if (applicationStatus != ApplicationStatus.PENDING) {
+            throw new InvalidApplicationStatusException();
+        }
+        this.applicationStatus = ApplicationStatus.APPROVED;
+    }
+
+    public void reject(String rejectReason) {
+        if (applicationStatus != ApplicationStatus.PENDING) {
+            throw new InvalidApplicationStatusException();
+        }
+        this.applicationStatus = ApplicationStatus.REJECTED;
+        this.rejectReason = rejectReason;
     }
 }

@@ -41,6 +41,9 @@ public enum ErrorCode {
     INVALID_SETTLEMENT_ACCOUNT(HttpStatus.BAD_REQUEST, "SE002", "은행 코드 또는 계좌번호 형식이 올바르지 않습니다."),
     ACCOUNT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "SE003", "인증 코드가 일치하지 않습니다."),
     ACCOUNT_VERIFICATION_EXPIRED(HttpStatus.GONE, "SE004", "인증 유효 시간이 만료되었습니다."),
+    DUPLICATE_SELLER_APPLICATION(HttpStatus.CONFLICT, "SE005", "이미 판매자 신청을 완료한 회원입니다."),
+    ACCOUNT_NOT_VERIFIED(HttpStatus.CONFLICT, "SE006", "계좌 인증이 완료되지 않았습니다."),
+    ADMIN_ACCESS_DENIED(HttpStatus.FORBIDDEN, "SE007", "권한이 없습니다."),
 
     // Drop Domain
     DROP_NOT_FOUND(HttpStatus.NOT_FOUND, "D001", "존재하지 않는 드롭입니다."),
