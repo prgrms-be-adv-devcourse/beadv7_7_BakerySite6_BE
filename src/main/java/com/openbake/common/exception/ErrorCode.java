@@ -36,6 +36,12 @@ public enum ErrorCode {
     AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "ME003", "이메일 또는 비밀번호가 일치하지 않습니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "ME004", "권한이 없습니다.."),
 
+    // Seller Domain - SE
+    BUSINESS_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "SE001", "사업자 인증에 실패했습니다."),
+    INVALID_SETTLEMENT_ACCOUNT(HttpStatus.BAD_REQUEST, "SE002", "은행 코드 또는 계좌번호 형식이 올바르지 않습니다."),
+    ACCOUNT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "SE003", "인증 코드가 일치하지 않습니다."),
+    ACCOUNT_VERIFICATION_EXPIRED(HttpStatus.GONE, "SE004", "인증 유효 시간이 만료되었습니다."),
+
     // Drop Domain
     DROP_NOT_FOUND(HttpStatus.NOT_FOUND, "D001", "존재하지 않는 드롭입니다."),
     INVALID_DROP_TIME(HttpStatus.BAD_REQUEST, "D002", "드롭 시작 시간 또는 마감 시간이 유효하지 않습니다."),
@@ -57,6 +63,7 @@ public enum ErrorCode {
     SETTLEMENT_BATCH_RESTART_FAILED(HttpStatus.CONFLICT, "S003", "정산 배치를 재시작할 수 없습니다."),
     INVALID_SETTLEMENT_BATCH_PARAMETERS(HttpStatus.BAD_REQUEST, "S004", "정산 배치 파라미터가 올바르지 않습니다."),
     SETTLEMENT_BATCH_EXECUTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "S500", "월 정산 배치 실행 중 오류가 발생했습니다.");
+
 
     private final HttpStatus status;
     private final String code;
