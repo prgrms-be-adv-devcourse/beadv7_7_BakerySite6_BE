@@ -18,6 +18,9 @@ public enum ErrorCode {
 
     // Seller Domain - SE
     BUSINESS_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "SE001", "사업자 인증에 실패했습니다."),
+    INVALID_SETTLEMENT_ACCOUNT(HttpStatus.BAD_REQUEST, "SE002", "은행 코드 또는 계좌번호 형식이 올바르지 않습니다."),
+    ACCOUNT_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "SE003", "인증 코드가 일치하지 않습니다."),
+    ACCOUNT_VERIFICATION_EXPIRED(HttpStatus.GONE, "SE004", "인증 유효 시간이 만료되었습니다."),
 
     // Drop Domain
     DROP_NOT_FOUND(HttpStatus.NOT_FOUND, "D001", "존재하지 않는 드롭입니다."),
