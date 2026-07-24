@@ -1,5 +1,8 @@
 package com.openbake.payment.application;
 
+import com.openbake.common.exception.BusinessException;
+import com.openbake.common.exception.ErrorCode;
+import com.openbake.payment.domain.AccountType;
 import com.openbake.payment.domain.DepositAccount;
 import com.openbake.payment.domain.OrderPayment;
 import com.openbake.payment.domain.PaymentStatus;
@@ -48,7 +51,8 @@ class PaymentServiceTest {
         memberAccount.charge(new BigDecimal("50000"));
         depositAccountRepository.save(memberAccount);
 
-        platformAccount = depositAccountRepository.save(DepositAccount.createPlatformAccount());
+        platformAccount = depositAccountRepository.findByAccountType(AccountType.PLATFORM)
+                .orElseGet(() -> depositAccountRepository.save(DepositAccount.createPlatformAccount()));
     }
 
     @Nested
@@ -100,8 +104,9 @@ class PaymentServiceTest {
         void failsWhenInsufficientBalance() {
             assertThatThrownBy(() ->
                     paymentService.pay(100L, 1L, new BigDecimal("60000"))
-            ).isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("잔액이 부족");
+            ).isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.INSUFFICIENT_BALANCE);
         }
     }
 
@@ -137,7 +142,9 @@ class PaymentServiceTest {
 
             assertThatThrownBy(() ->
                     paymentService.refund(100L)
-            ).isInstanceOf(IllegalStateException.class);
+            ).isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.INVALID_PAYMENT_STATUS);
         }
     }
 
@@ -163,7 +170,9 @@ class PaymentServiceTest {
 
             assertThatThrownBy(() ->
                     paymentService.confirmPayment(100L)
-            ).isInstanceOf(IllegalStateException.class);
+            ).isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.INVALID_PAYMENT_STATUS);
         }
     }
 }

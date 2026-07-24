@@ -34,4 +34,9 @@ public class AuthCredentialRepositoryImpl implements AuthCredentialRepository {
         return authCredentialJpaRepository.findByProviderAndEmail(provider, email);
     }
 
+    @Override
+    public Optional<AuthCredential> findByMemberId(Long memberId) {
+        return authCredentialJpaRepository.findByMemberId(memberId);
+    }
+
 }

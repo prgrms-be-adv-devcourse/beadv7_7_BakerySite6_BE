@@ -5,18 +5,19 @@ import com.openbake.common.exception.DuplicateMemberException;
 import com.openbake.common.exception.InvalidIdTokenException;
 import com.openbake.common.exception.InvalidRefreshTokenException;
 import com.openbake.member.application.AuthService;
+import com.openbake.member.domain.AccessTokenRepository;
 import com.openbake.member.domain.AuthProvider;
 import com.openbake.member.domain.Role;
 import com.openbake.member.infrastructure.jwt.JwtTokenProvider;
-import com.openbake.member.presentation.dto.LocalLoginRequest;
-import com.openbake.member.presentation.dto.LocalLoginResponse;
-import com.openbake.member.presentation.dto.LogoutRequest;
-import com.openbake.member.presentation.dto.OAuthLoginRequest;
-import com.openbake.member.presentation.dto.OAuthLoginResponse;
-import com.openbake.member.presentation.dto.ReissueRequest;
-import com.openbake.member.presentation.dto.ReissueResponse;
-import com.openbake.member.presentation.dto.SignupRequest;
-import com.openbake.member.presentation.dto.SignupResponse;
+import com.openbake.member.presentation.dto.auth.LocalLoginRequest;
+import com.openbake.member.presentation.dto.auth.LocalLoginResponse;
+import com.openbake.member.presentation.dto.auth.LogoutRequest;
+import com.openbake.member.presentation.dto.auth.OAuthLoginRequest;
+import com.openbake.member.presentation.dto.auth.OAuthLoginResponse;
+import com.openbake.member.presentation.dto.auth.ReissueRequest;
+import com.openbake.member.presentation.dto.auth.ReissueResponse;
+import com.openbake.member.presentation.dto.auth.SignupRequest;
+import com.openbake.member.presentation.dto.auth.SignupResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +52,9 @@ class AuthControllerTest {
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
+    @MockitoBean
+    private AccessTokenRepository accessTokenRepository;
+
     @Test
     @DisplayName("회원가입 성공 시 200과 회원 정보를 반환한다")
     void signup_success() throws Exception {
@@ -77,7 +81,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C004"));
+                .andExpect(jsonPath("$.error.code").value("ME001"));
     }
 
     @Test
@@ -150,7 +154,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C004"));
+                .andExpect(jsonPath("$.error.code").value("ME001"));
     }
 
     @Test
@@ -165,7 +169,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C005"));
+                .andExpect(jsonPath("$.error.code").value("ME002"));
     }
 
     @Test
@@ -210,7 +214,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C006"));
+                .andExpect(jsonPath("$.error.code").value("ME003"));
     }
 
     @Test
@@ -266,7 +270,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C005"));
+                .andExpect(jsonPath("$.error.code").value("ME002"));
     }
 
     @Test
@@ -305,7 +309,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("C005"));
+                .andExpect(jsonPath("$.error.code").value("ME002"));
     }
 
     @Test
