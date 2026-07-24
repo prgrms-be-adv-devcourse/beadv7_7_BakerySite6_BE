@@ -2,7 +2,6 @@ package com.openbake.drop.presentation;
 
 import com.openbake.common.response.ApiResponse;
 import com.openbake.drop.application.DropEnterService;
-import com.openbake.drop.application.DropService;
 import com.openbake.drop.application.dto.ConfirmEntryResponse;
 import com.openbake.drop.application.dto.QueueRankResponse;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,6 @@ public class DropEnterController {
 //                                    ,@AuthenticationPrincipal CustomUserDetails customUserDetails
     ){
         Long memberId = 999L; // 로컬 테스트 용
-        // sellerId 도 받아와야함.
         ConfirmEntryResponse response = dropEnterService.confirmEntry(dropId, memberId);
         return ApiResponse.ok(response);
     }
@@ -31,7 +29,6 @@ public class DropEnterController {
 //                                    ,@AuthenticationPrincipal CustomUserDetails customUserDetails
     ){
 //        Long memberId = customUserDetails.getMemberId();
-        // sellerId 도 받아와야함.
         Long memberId = 999L; // 로컬 테스트 용
         QueueRankResponse response = dropEnterService.enterQueue(dropId, memberId);
         return ApiResponse.ok(response);
@@ -42,7 +39,6 @@ public class DropEnterController {
 //                                       ,@AuthenticationPrincipal CustomUserDetails customUserDetails
     ){
         Long memberId = 999L; // 테스트 값
-        // sellerId 도 받아와야함.
         QueueRankResponse response = dropEnterService.getRank(dropId, memberId);
         return ApiResponse.ok(response);
     }
