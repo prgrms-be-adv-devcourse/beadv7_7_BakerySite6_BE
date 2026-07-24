@@ -44,4 +44,9 @@ public class SellerController {
         return ApiResponse.ok(sellerService.updateApplicationStatus(id, request));
     }
 
+    @GetMapping("/{id}")
+    public ApiResponse<SellerResponse> getSeller(@PathVariable Long id) {
+        return ApiResponse.ok(sellerService.getSeller(id));
+    }
+
 }

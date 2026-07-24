@@ -138,6 +138,33 @@ public class SellerService {
         return new ApplicationStatusUpdateResponse(saved.getId(), saved.getApplicationStatus(), saved.getRejectReason(), saved.getUpdatedAt());
     }
 
+    public SellerResponse getSeller(Long id) {
+        Seller seller = sellerRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("대상을 찾을 수 없습니다."));
+
+        return new SellerResponse(
+                seller.getId(),
+                seller.getMemberId(),
+                seller.getBakeryName(),
+                seller.getBusinessNumber(),
+                seller.getApplicationStatus(),
+                seller.getSettlementBankCode(),
+                maskAccountNumber(seller.getSettlementAccountNumber()),
+                seller.isAccountVerified(),
+                seller.getAccountVerifiedAt()
+        );
+    }
+
+    private String maskAccountNumber(String accountNumber) {
+        if (accountNumber.length() <= 7) {
+            return accountNumber;
+        }
+        String prefix = accountNumber.substring(0, 3);
+        String suffix = accountNumber.substring(accountNumber.length() - 4);
+        String masked = "*".repeat(accountNumber.length() - 7);
+        return prefix + "-" + masked + "-" + suffix;
+    }
+
     private String generateCode() {
         return String.format("%04d", ThreadLocalRandom.current().nextInt(10000));
     }
